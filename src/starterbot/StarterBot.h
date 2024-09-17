@@ -17,6 +17,8 @@ public:
     void trainAdditionalWorkers();
     void buildAdditionalSupply();
     void drawDebugInformation();
+	void buildAssimilator();
+	void sendIdleWorkersToGas();
 
     // functions that are triggered by various BWAPI events from main.cpp
 	void onStart();

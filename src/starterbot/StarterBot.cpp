@@ -27,6 +27,9 @@ void StarterBot::onFrame()
     // Update our MapTools information
     m_mapTools.onFrame();
 
+    // Send idle workers to gather Gas from refinery
+    //sendIdleWorkersToGas();
+
     // Send our idle workers to mine minerals so they don't just stand there
     sendIdleWorkersToMinerals();
 
@@ -35,6 +38,9 @@ void StarterBot::onFrame()
 
     // Build more supply if we are going to run out soon
     buildAdditionalSupply();
+
+    //Build Assimilator
+    buildAssimilator();
 
     // Draw unit health bars, which brood war unfortunately does not do
     Tools::DrawUnitHealthBars();
@@ -54,6 +60,7 @@ void StarterBot::sendIdleWorkersToMinerals()
         // Check the unit type, if it is an idle worker, then we want to send it somewhere
         if (unit->getType().isWorker() && unit->isIdle())
         {
+
             // Get the closest mineral to this worker unit
             BWAPI::Unit closestMineral = Tools::GetClosestUnitTo(unit, BWAPI::Broodwar->getMinerals());
 
@@ -62,6 +69,25 @@ void StarterBot::sendIdleWorkersToMinerals()
         }
     }
 }
+
+// Send idle workers to collect gas
+//void StarterBot::sendIdleWorkersToGas()
+//{
+//    // Loop over existing workers
+//    const BWAPI::Unitset& myUnits = BWAPI::Broodwar->self()->getUnits();
+//    for (auto& unit : myUnits)
+//    {
+//        // Check the unit type, if it is an idle worker, then we want to send it somewhere
+//        if (unit->getType().isWorker() && unit->isIdle())
+//        {
+//            // Get the closest assimilator to this worker unit
+//            BWAPI::Unit closestRefinery = Tools::GetClosestUnitTo(unit, BWAPI::Broodwar->getGeysers());
+//
+//            // If a valid mineral was found, right click it with the unit in order to start harvesting
+//            if (closestRefinery) { unit->rightClick(closestRefinery); }
+//        }
+//    }
+//}
 
 // Train more workers so we can gather more income
 void StarterBot::trainAdditionalWorkers()
@@ -96,6 +122,19 @@ void StarterBot::buildAdditionalSupply()
     if (startedBuilding)
     {
         BWAPI::Broodwar->printf("Started Building %s", supplyProviderType.getName().c_str());
+    }
+}
+
+// Build Assimilator building to retrieve Gas 
+void StarterBot::buildAssimilator()
+{
+    // Gets the current race's refinery type
+    const BWAPI::UnitType refineryType = BWAPI::Broodwar->self()->getRace().getRefinery();
+
+    const bool startedBuilding = Tools::BuildBuilding(refineryType);
+    if (startedBuilding)
+    {
+        BWAPI::Broodwar->printf("Started Building %s", refineryType.getName().c_str());
     }
 }
 
