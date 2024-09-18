@@ -11,16 +11,8 @@ StarterBot::StarterBot()
 // Called when the bot starts!
 void StarterBot::onStart()
 {
-    std::vector<std::pair<int, BWAPI::UnitType>> order = {
-        { 8, BWAPI::UnitTypes::Enum::Protoss_Pylon },
-        { 10, BWAPI::UnitTypes::Enum::Protoss_Gateway },
-        { 12, BWAPI::UnitTypes::Enum::Protoss_Assimilator },
-        { 13, BWAPI::UnitTypes::Enum::Protoss_Cybernetics_Core },
-        { 15, BWAPI::UnitTypes::Enum::Protoss_Pylon },
-        { 17, BWAPI::UnitTypes::Enum::Protoss_Dragoon }
-    };
-
-    BuildOrder dragoonFirst = BuildOrder("Dragoon First", order);
+    // Instantiate build orders
+    BuildOrder::createBuildOrders();
 
     // Set our BWAPI options here    
 	BWAPI::Broodwar->setLocalSpeed(10);
