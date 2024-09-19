@@ -10,9 +10,21 @@ StarterBot::StarterBot()
 // Called when the bot starts!
 void StarterBot::onStart()
 {
-    // Set our BWAPI options here    
+    // Set our BWAPI options here
+    /* @setLocalSpeed: Sets minimum time per frame to this
+        number (e.g. 100 = each frame takes at least 100ms)
+        - Or you can call /speed in game (lower = faster)
+       @setFrameSkip: Sets how many nth frames skipped
+       @BWAPI::Broodwar - a Game Object, everything in the
+       BWAPI library is inside the "BWAPPI::" namespace.
+       The instance of the game that's already setup for us
+       is BWAPI::Broodwar
+       - All game functions in BWAPI game class: 
+       https://bwapi.github.io/class_b_w_a_p_i_1_1_game.html
+    */
 	BWAPI::Broodwar->setLocalSpeed(10);
     BWAPI::Broodwar->setFrameSkip(0);
+
     
     // Enable the flag that tells BWAPI top let users enter input while bot plays
     BWAPI::Broodwar->enableFlag(BWAPI::Flag::UserInput);
@@ -78,6 +90,25 @@ void StarterBot::trainAdditionalWorkers()
         // there is no reason for a bot to ever use the unit queueing system, it just wastes resources
         if (myDepot && !myDepot->isTraining()) { myDepot->train(workerType); }
     }
+    else {
+        //this is where we are going to build the Gateway and from there, start producing zealots
+
+        //build Gateway here
+
+
+        // produce zealots here
+        const BWAPI::UnitType zealotsType = BWAPI::UnitTypes::Protoss_Zealot;
+        const int zealotsWanted = 5;
+        const int zealotsOwned = Tools::CountUnitsOfType(zealotsType, BWAPI::Broodwar->self()->getUnits());
+
+        //get the unit pointer to my gateway
+        const BWAPI::Unit myGateway = Tools::GetUnitOfType(BWAPI::UnitTypes::Protoss_Gateway);
+        if(myGateway != nullptr && zealotsOwned < zealotsWanted){
+            if (!myGateway->isTraining()) {
+                myGateway->train(zealotsType);
+            }
+        }
+    }
 }
 
 // Build more supply if we are going to run out soon
@@ -116,7 +147,8 @@ void StarterBot::onEnd(bool isWinner)
 // Called whenever a unit is destroyed, with a pointer to the unit
 void StarterBot::onUnitDestroy(BWAPI::Unit unit)
 {
-	
+    //unit->getType().getName() is a string type, convert it to const char*
+    BWAPI::Broodwar->sendText(unit->getType().getName().c_str());
 }
 
 // Called whenever a unit is morphed, with a pointer to the unit
@@ -140,7 +172,9 @@ void StarterBot::onSendText(std::string text)
 // so this will trigger when you issue the build command for most units
 void StarterBot::onUnitCreate(BWAPI::Unit unit)
 { 
-	
+    std::string created = unit->getType().getName() + "has been created";
+    //unit->getType().getName() is a string type, convert it to const char*
+    BWAPI::Broodwar->sendText(created.c_str());
 }
 
 // Called whenever a unit finished construction, with a pointer to the unit
