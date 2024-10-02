@@ -44,4 +44,5 @@ private:
 	void sendIdleWorkersToMinerals();
 	void trainAdditionalWorkers();
 	void buildAdditionalSupply();
+	void buildNumberOfUnits(BWAPI::UnitType type, int numberWanted);
 };

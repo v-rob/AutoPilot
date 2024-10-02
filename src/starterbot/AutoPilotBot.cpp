@@ -21,6 +21,10 @@ void AutoPilotBot::onFrame() {
 
     // Build more supply if we are going to run out soon.
     buildAdditionalSupply();
+
+    // Build Gatways and Cybernetics Cores
+    buildNumberOfUnits(bw::UnitTypes::Enum::Protoss_Gateway, 2);
+    buildNumberOfUnits(bw::UnitTypes::Enum::Protoss_Cybernetics_Core, 1);
 }
 
 void AutoPilotBot::onDraw() {
@@ -83,20 +87,33 @@ void AutoPilotBot::trainAdditionalWorkers() {
     }
 }
 
+// Build more supply if we are going to run out soon
 void AutoPilotBot::buildAdditionalSupply() {
-    // Get the amount of supply supply we currently have unused.
-    int unusedSupply = Tools::GetTotalSupply(true) - g_self->supplyUsed();
+    // Get the amount of supply supply we currently have unused
+    const int unusedSupply = Tools::GetTotalSupply(true) - g_self->supplyUsed();
 
-    // If we have a sufficient amount of supply, we don't need to do anything.
+    // If we have a sufficient amount of supply, we don't need to do anything
     if (unusedSupply >= 2) {
         return;
     }
 
-    // Otherwise, we want to build a supply provider.
-    bw::UnitType supplyProviderType = g_self->getRace().getSupplyProvider();
-
-    bool startedBuilding = Tools::BuildBuilding(supplyProviderType);
+    const bool startedBuilding = Tools::BuildBuilding(bw::UnitTypes::Enum::Protoss_Pylon);
     if (startedBuilding) {
-        g_game->printf("Started building %s", supplyProviderType.getName().c_str());
+        g_game->printf("Started Building Protoss_Pylon");
+    }
+}
+
+// Continuously checks if [numberWanted] units of type [type] exist; if they don't, build more
+void AutoPilotBot::buildNumberOfUnits(bw::UnitType type, int numberWanted) {
+    // counts how many units of that type exist (built or under construction)
+    const int numUnits = Tools::CountUnitsOfType(type, g_self->getUnits());
+
+    // cancel if number of units wanted is satisfied
+    if (numUnits >= numberWanted) { return; }
+
+    // attempt to build it
+    const bool startedBuilding = Tools::BuildBuilding(type);
+    if (startedBuilding) {
+        g_game->printf("Started Building %s", type.getName().c_str());
     }
 }
