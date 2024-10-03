@@ -51,7 +51,7 @@ bw::Unit WorkerManager::getWorker() {
 */
 void WorkerManager::addUnit(const bw::Unit unit) {
 	std::vector<bw::Unit> currentWorkerList = WorkerManager::getWorkerList();
-	currentWorkerList.push_back(unit);
+	currentWorkerList.push_back(unit); 
 };
 
 /*
