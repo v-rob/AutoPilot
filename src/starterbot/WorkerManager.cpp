@@ -4,7 +4,7 @@
 
 /*
 * WorkerManager class tracks and manages all of the worker units
-* the AI has.
+* the AI has. 
 */
 class WorkerManager {
 public:
