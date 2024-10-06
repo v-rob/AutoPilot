@@ -5,10 +5,10 @@
 
 class UnitManager : protected EventReceiver {
 public:
-	bw::Unit borrowUnit(const bw::UnaryFilter<bw::Unit>& pred);
-	bw::Unitset borrowUnits(const bw::UnaryFilter<bw::Unit>& pred, int count = -1);
-	bw::Unit reserveUnit(const bw::UnaryFilter<bw::Unit>& pred);
-	bw::Unitset reserveUnits(const bw::UnaryFilter<bw::Unit>& pred, int count = -1);
+	bw::Unit borrowUnit(const bw::UnaryFilter<bw::Unit, std::function<bool(bw::Unit)>>& pred);
+	bw::Unitset borrowUnits(const bw::UnaryFilter<bw::Unit, std::function<bool(bw::Unit)>>& pred, int count = -1);
+	bw::Unit reserveUnit(const bw::UnaryFilter<bw::Unit, std::function<bool(bw::Unit)>>& pred);
+	bw::Unitset reserveUnits(const bw::UnaryFilter<bw::Unit, std::function<bool(bw::Unit)>>& pred, int count = -1);
 	void releaseUnit(bw::Unit unit);
 	void releaseUnits(bw::Unitset units);
 
