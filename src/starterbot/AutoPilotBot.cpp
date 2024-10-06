@@ -1,8 +1,11 @@
 #include "AutoPilotBot.h"
 
-void AutoPilotBot::onStart(int gameCount) {
-    std::cout << "Playing game " << gameCount << " on map " <<
-        g_game->mapFileName() << std::endl;
+void AutoPilotBot::notifyMembers(const bw::Event& event) {
+    m_strategyManager.notifyReceiver(event);
+}
+
+void AutoPilotBot::onStart() {
+    std::cout << "Playing game " << g_gameCount << " on map " << g_game->mapFileName() << std::endl;
 
     // Set the speed at which our configuration option says the game should be run at.
     g_game->setLocalSpeed(LOCAL_SPEED);
@@ -12,91 +15,101 @@ void AutoPilotBot::onStart(int gameCount) {
     g_game->enableFlag(bw::Flag::UserInput);
 }
 
-void AutoPilotBot::onFrame() {
-    // Send our idle workers to mine minerals so they don't just stand there.
-    sendIdleWorkersToMinerals();
-
-    // Train more workers so we can gather more income.
-    trainAdditionalWorkers();
-
-    // Build more supply if we are going to run out soon.
-    buildAdditionalSupply();
-}
-
 void AutoPilotBot::onDraw() {
-    Tools::DrawUnitHealthBars();
-    Tools::DrawUnitCommands();
-    Tools::DrawUnitBoundingBoxes();
+    // Draw some useful information about each unit, namely commands and health.
+    drawUnitBoxes();
+    drawCommands();
+    drawHealthBars();
 }
 
 void AutoPilotBot::onEnd(bool isWinner) {
     std::cout << "Game finished with " << (isWinner ? "win" : "loss") << std::endl;
 }
 
-void AutoPilotBot::onSendText(const std::string& text) {}
+void AutoPilotBot::drawUnitBoxes() {
+    for (bw::Unit unit : g_game->getAllUnits()) {
+        bw::Position topLeft(unit->getLeft(), unit->getTop());
+        bw::Position bottomRight(unit->getRight(), unit->getBottom());
 
-// For now, we don't use any of these callbacks, so they remain empty.
-void AutoPilotBot::onUnitCreate(bw::Unit unit) {}
-void AutoPilotBot::onUnitDestroy(bw::Unit unit) {}
-void AutoPilotBot::onUnitComplete(bw::Unit unit) {}
-void AutoPilotBot::onUnitMorph(bw::Unit unit) {}
-void AutoPilotBot::onUnitRenegade(bw::Unit unit) {}
-void AutoPilotBot::onUnitEvade(bw::Unit unit) {}
-void AutoPilotBot::onUnitDiscover(bw::Unit unit) {}
-void AutoPilotBot::onUnitShow(bw::Unit unit) {}
-void AutoPilotBot::onUnitHide(bw::Unit unit) {}
+        g_game->drawBoxMap(topLeft, bottomRight, bw::Colors::White);
+    }
+}
 
-void AutoPilotBot::sendIdleWorkersToMinerals() {
-    // Let's send all of our starting workers to the closest mineral to them. First, we
-    // need to loop over all of the units that we own.
+void AutoPilotBot::drawCommands() {
     for (bw::Unit unit : g_self->getUnits()) {
-        // Check the unit type. If it's an idle worker, then we want to send it somewhere.
-        if (unit->getType().isWorker() && unit->isIdle()) {
-            // Get the closest mineral to this worker unit.
-            bw::Unit closestMineral = Tools::GetClosestUnitTo(unit, g_game->getMinerals());
+        const bw::UnitCommand& command = unit->getLastCommand();
 
-            // If a valid mineral was found, right click it with the unit in order to
-            // start harvesting.
-            if (closestMineral != nullptr) {
-                unit->rightClick(closestMineral);
-            }
+        // If the previous command had a ground position target, draw it in red.
+        if (command.getTargetPosition() != bw::Positions::None) {
+            g_game->drawLineMap(unit->getPosition(),
+                command.getTargetPosition(), bw::Colors::Red);
+        }
+
+        // If the previous command had a tile position target, draw it in green.
+        if (command.getTargetTilePosition() != bw::TilePositions::None) {
+            g_game->drawLineMap(unit->getPosition(),
+                bw::Position(command.getTargetTilePosition()), bw::Colors::Green);
+        }
+
+        // If the previous command had a unit target, draw it in white.
+        if (command.getTarget() != nullptr) {
+            g_game->drawLineMap(unit->getPosition(),
+                command.getTarget()->getPosition(), bw::Colors::White);
         }
     }
 }
 
-void AutoPilotBot::trainAdditionalWorkers() {
-    bw::UnitType workerType = g_self->getRace().getWorker();
-    int workersOwned = Tools::CountUnitsOfType(workerType, g_self->getUnits());
+void AutoPilotBot::drawHealthBars() {
+    for (bw::Unit unit : g_game->getAllUnits()) {
+        // If the unit is a resource, draw the remaining resources in cyan.
+        if (unit->getType().isResourceContainer() && unit->getInitialResources() > 0) {
+            double mineralRatio = (double)unit->getResources() / (double)unit->getInitialResources();
+            drawHealthBar(unit, mineralRatio, bw::Colors::Cyan, 0);
+        }
 
-    // If we have a sufficient number of workers, we don't need to train any more.
-    if (workersOwned >= 20) {
-        return;
-    }
+        // If the unit has health, then draw the health in green, orange, or red,
+        // corresponding to how damaged the unit is.
+        if (unit->getType().maxHitPoints() > 0) {
+            double hpRatio = (double)unit->getHitPoints() / (double)unit->getType().maxHitPoints();
 
-    // Get the unit pointer to my depot.
-    bw::Unit myDepot = Tools::GetUnitOfType(g_self->getRace().getResourceDepot());
+            bw::Color hpColor;
+            if (hpRatio < 0.33) {
+                hpColor = bw::Colors::Red;
+            } else if (hpRatio < 0.66) {
+                hpColor = bw::Colors::Orange;
+            } else {
+                hpColor = bw::Colors::Green;
+            }
 
-    // If we have a valid depot unit and it's currently not training something, train
-    // a worker. There's no reason for a bot to ever use the unit queueing system.
-    if (myDepot && !myDepot->isTraining()) {
-        myDepot->train(workerType);
+            drawHealthBar(unit, hpRatio, hpColor, 0);
+        }
+
+        // If the unit has shields, draw those as well in blue.
+        if (unit->getType().maxShields() > 0) {
+            double shieldRatio = (double)unit->getShields() / (double)unit->getType().maxShields();
+            drawHealthBar(unit, shieldRatio, bw::Colors::Blue, -3);
+        }
     }
 }
 
-void AutoPilotBot::buildAdditionalSupply() {
-    // Get the amount of supply supply we currently have unused.
-    int unusedSupply = Tools::GetTotalSupply(true) - g_self->supplyUsed();
+void AutoPilotBot::drawHealthBar(bw::Unit unit, double ratio, bw::Color color, int yOffset) {
+    bw::Position pos = unit->getPosition();
+    int unitTop = pos.y - unit->getType().dimensionUp();
 
-    // If we have a sufficient amount of supply, we don't need to do anything.
-    if (unusedSupply >= 2) {
-        return;
-    }
+    // Calculate the dimensions for the bar background and length.
+    int left   = pos.x - unit->getType().dimensionLeft();
+    int right  = pos.x + unit->getType().dimensionRight();
+    int top    = unitTop + yOffset - 10;
+    int bottom = unitTop + yOffset - 6;
 
-    // Otherwise, we want to build a supply provider.
-    bw::UnitType supplyProviderType = g_self->getRace().getSupplyProvider();
+    int bar = (int)((right - left) * ratio + left);
 
-    bool startedBuilding = Tools::BuildBuilding(supplyProviderType);
-    if (startedBuilding) {
-        g_game->printf("Started building %s", supplyProviderType.getName().c_str());
+    // Draw the background of the bar, the bar itself, and the tick marks inside the bar.
+    g_game->drawBoxMap(bw::Position(left, top), bw::Position(right, bottom), bw::Colors::Grey, true);
+    g_game->drawBoxMap(bw::Position(left, top), bw::Position(bar, bottom), color, true);
+    g_game->drawBoxMap(bw::Position(left, top), bw::Position(right, bottom), bw::Colors::Black, false);
+
+    for (int i = left; i < right - 1; i += 3) {
+        g_game->drawLineMap(bw::Position(i, top), bw::Position(i, bottom), bw::Colors::Black);
     }
 }
