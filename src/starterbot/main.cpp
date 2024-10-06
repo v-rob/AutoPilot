@@ -8,54 +8,6 @@
 #include <chrono>
 
 bw::Client& g_client = bw::BWAPIClient;
-int g_gameCount = 0;
-
-static void handleEvents(AutoPilotBot& bot) {
-    for (const bw::Event& e : g_game->getEvents()) {
-        switch (e.getType()) {
-        case bw::EventType::MatchStart:
-            bot.onStart(g_gameCount);
-            break;
-        case bw::EventType::MatchFrame:
-            bot.onFrame();
-            bot.onDraw();
-            break;
-        case bw::EventType::MatchEnd:
-            bot.onEnd(e.isWinner());
-            break;
-        case bw::EventType::SendText:
-            bot.onSendText(e.getText());
-            break;
-        case bw::EventType::UnitCreate:
-            bot.onUnitCreate(e.getUnit());
-            break;
-        case bw::EventType::UnitDestroy:
-            bot.onUnitDestroy(e.getUnit());
-            break;
-        case bw::EventType::UnitComplete:
-            bot.onUnitComplete(e.getUnit());
-            break;
-        case bw::EventType::UnitMorph:
-            bot.onUnitMorph(e.getUnit());
-            break;
-        case bw::EventType::UnitRenegade:
-            bot.onUnitRenegade(e.getUnit());
-            break;
-        case bw::EventType::UnitEvade:
-            bot.onUnitEvade(e.getUnit());
-            break;
-        case bw::EventType::UnitDiscover:
-            bot.onUnitDiscover(e.getUnit());
-            break;
-        case bw::EventType::UnitHide:
-            bot.onUnitHide(e.getUnit());
-            break;
-        case bw::EventType::UnitShow:
-            bot.onUnitShow(e.getUnit());
-            break;
-        }
-    }
-}
 
 static void playGame(AutoPilotBot& bot) {
     std::cout << "\n### Waiting for game" << std::endl;
@@ -81,7 +33,10 @@ static void playGame(AutoPilotBot& bot) {
             break;
         }
 
-        handleEvents(bot);
+        for (const bw::Event& event : g_game->getEvents()) {
+            bot.notifyReceiver(event);
+        }
+
         g_client.update();
     }
 
