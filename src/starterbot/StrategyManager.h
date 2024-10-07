@@ -2,6 +2,7 @@
 
 #include "Tools.h"
 #include "UnitManager.h"
+#include "BuildingManager.h"
 
 #include <vector>
 
@@ -21,6 +22,7 @@ struct ActionItem {
 class StrategyManager : public EventReceiver {
 private:
     UnitManager m_unitManager;
+    BuildingManager m_buildingManager;
 
     std::vector<ActionItem> m_strategy;
     int m_strategyItem;
