@@ -1,15 +1,15 @@
-#include "TrainingManager.h"
+#include "BuildingManager.h"
 
 #include <algorithm>
 
-TrainingManager::TrainingManager(UnitManager& manager) : m_unitManager(manager) {}
+BuildingManager::BuildingManager(UnitManager& manager) : m_unitManager(manager) {}
 
-void TrainingManager::onStart()
+void BuildingManager::onStart()
 {
 	m_reservedBuildings = bw::Unitset();
 }
 
-bool TrainingManager::addTrainRequest(bw::UnitType type)
+bool BuildingManager::addTrainRequest(bw::UnitType type)
 {
 	// we'll need to change this if/when we use Archons; only unit that requires two buildings
 	bw::UnitType buildingTypeNeeded = type.whatBuilds().first;
@@ -28,7 +28,7 @@ bool TrainingManager::addTrainRequest(bw::UnitType type)
 	return true;
 }
 
-int TrainingManager::countTrainRequests(bw::UnitType type)
+int BuildingManager::countTrainRequests(bw::UnitType type)
 {
 	int requests = 0;
 
@@ -42,12 +42,12 @@ int TrainingManager::countTrainRequests(bw::UnitType type)
 }
 
 // isn't this the same as Tools::CountUnitsOfType?
-int TrainingManager::countTrained(bw::UnitType type)
+int BuildingManager::countTrained(bw::UnitType type)
 {
 	
 }
 
-void TrainingManager::onUnitComplete(bw::Unit unit)
+void BuildingManager::onUnitComplete(bw::Unit unit)
 {
 	// I'm not sure if there's a way to see which building trained a certain unit,
 	// so for now I'm just looping through all of them and removing the one with an empty queue

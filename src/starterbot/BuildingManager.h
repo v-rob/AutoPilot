@@ -4,9 +4,9 @@
 #include "EventReceiver.h"
 #include "UnitManager.h"
 
-class TrainingManager : protected EventReceiver {
+class BuildingManager : protected EventReceiver {
 public:
-	TrainingManager(UnitManager& manager);
+	BuildingManager(UnitManager& manager);
 	bool addTrainRequest(bw::UnitType type);
 	int countTrainRequests(bw::UnitType type);
 	int countTrained(bw::UnitType type);
