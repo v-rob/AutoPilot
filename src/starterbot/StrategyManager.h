@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BuildingManager.h"
+//#include "ProductionManager.h"
 #include "Tools.h"
 #include "UnitManager.h"
 
@@ -22,8 +24,14 @@ class StrategyManager : public EventReceiver {
 private:
     UnitManager m_unitManager;
 
+//    ProductionManager m_productionManager;
+    BuildingManager m_buildingManager;
+
     std::vector<ActionItem> m_strategy;
     int m_strategyItem;
+
+public:
+    StrategyManager();
 
 protected:
     virtual void notifyMembers(const bw::Event& event) override;
