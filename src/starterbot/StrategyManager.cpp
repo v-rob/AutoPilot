@@ -1,7 +1,14 @@
 #include "StrategyManager.h"
 
-void StrategyManager::notifyMembers(const bw::Event &event) {
+StrategyManager::StrategyManager() :
+//    m_productionManager(m_unitManager),
+    m_buildingManager(m_unitManager) {
+}
+
+void StrategyManager::notifyMembers(const bw::Event& event) {
     m_unitManager.notifyReceiver(event);
+//    m_productionManager.notifyReceiver(event);
+    m_buildingManager.notifyReceiver(event);
 }
 
 void StrategyManager::onStart() {
@@ -15,5 +22,50 @@ void StrategyManager::onStart() {
 }
 
 void StrategyManager::onFrame() {
-    // TODO: We need ProductionManager and BuildingManager before this can be implemented.
+    if (m_strategyItem >= m_strategy.size()) {
+        return;
+    }
+
+    const ActionItem& item = m_strategy[m_strategyItem];
+
+    switch (item.type) {
+    case ActionType::BUILD: {
+#if 0
+        int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
+        int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true) +
+            m_productionManager.countBuildRequests(item.unit);
+
+        if (current >= item.count) {
+            m_strategyItem++;
+        }
+
+        while (progress < item.count && m_productionManager.addBuildRequest(item.unit)) {
+            progress++;
+        }
+#endif
+        break;
+    }
+
+    case ActionType::TRAIN: {
+        int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
+        int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true);
+
+        if (current >= item.count) {
+            m_strategyItem++;
+        }
+
+        while (progress < item.count && m_buildingManager.addTrainRequest(item.unit)) {
+            progress++;
+        }
+        break;
+    }
+
+    case ActionType::SCOUT:
+        // TODO
+        break;
+
+    case ActionType::ATTACK:
+        // TODO
+        break;
+    }
 }
