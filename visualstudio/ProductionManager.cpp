@@ -9,7 +9,7 @@
  @m_reservedWorkers - list of workers that are currently idle
 */
 ProductionManager::ProductionManager(unitManager& manager) : unitManager(manager) {
-	m_reservedWorkers();
+	m_reservedWorkers(manager);
 }
 
 ///////////////////////////////////////////////
@@ -23,7 +23,20 @@ no worker could be reserved, the function returns false.
 */
 bool addBuildRequests(bw::UnitType buildingType) {
 	//TODO:meaning of this
-}
+	bw::Unit worker = m_reservedWorkers.reserveUnit(bw::Filter::GetType == buildingType.whatBuilds().first);
+
+		if (worker == nullptr) {
+			return false;
+		}
+
+		if (!worker->isIdle()) {
+			m_reservedWorkers.releaseUnit(worker);
+			return false;
+		}
+
+		m_reservedWorkers.insert(worker);
+		return true;
+}	
 
 
 //countBuildRequests
@@ -33,20 +46,29 @@ are being built by workers. (in progress builds)
 */
 int countBuildRequests(bw::UnitType buildingType) {
 	//TODO:meaning of this
-	// How many workers are working on one building?
+	//How many workers are working on one building?
 	//uses number of buildings and add
+	int count = 0;
+
+	return UnitManager::matchCount(m_reservedWorkers,bw::Filter::BuildType == buildingType)  
+	/*for (bw::Unit building : g_self->getUnits()) {
+		if (building->getType() == buildingType && !(building->isCompleted())) {
+			count++;
+		}
+	}
+	return count;*/
 }
 
 
-//countBuildings
-/*
-The `countBuildings()` function counts how many
-buildings of the specified type have been completed.
-*/
-int countBuildings(bw::UnitType buildingType) {
-	int numOfBuildings = Tools::CountUnitsOfType(buildingType, g_self->getUnits());
-	return numOfBuildings;
-}
+////countBuildings
+///*
+//The `countBuildings()` function counts how many
+//buildings of the specified type have been completed.
+//*/
+//int countBuildings(bw::UnitType buildingType) {
+//	int numOfBuildings = m_unitManager.peekCount(bw::Filter::GetType == buildingType);
+//	return numOfBuildings;
+//}
 
 
 ////////////////////////////////////////////////
