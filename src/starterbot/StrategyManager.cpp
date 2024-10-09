@@ -1,13 +1,13 @@
 #include "StrategyManager.h"
 
 StrategyManager::StrategyManager() :
-//    m_productionManager(m_unitManager),
+    m_productionManager(m_unitManager),
     m_buildingManager(m_unitManager) {
 }
 
 void StrategyManager::notifyMembers(const bw::Event& event) {
     m_unitManager.notifyReceiver(event);
-//    m_productionManager.notifyReceiver(event);
+    m_productionManager.notifyReceiver(event);
     m_buildingManager.notifyReceiver(event);
 }
 
@@ -30,7 +30,7 @@ void StrategyManager::onFrame() {
 
     switch (item.type) {
     case ActionType::BUILD: {
-#if 0
+if 0
         int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
         int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true) +
             m_productionManager.countBuildRequests(item.unit);
@@ -42,7 +42,7 @@ void StrategyManager::onFrame() {
         while (progress < item.count && m_productionManager.addBuildRequest(item.unit)) {
             progress++;
         }
-#endif
+endif
         break;
     }
 

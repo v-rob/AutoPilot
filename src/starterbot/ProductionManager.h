@@ -1,6 +1,7 @@
-#pragam once
+#pragma once
 
 #include "./Tools.h"
+#include "UnitManager.h"
 
 //The actual ProductionManager.h
 
@@ -22,9 +23,9 @@ public:
 	//ProductionManager(UnitManager& manager)
 	ProductionManager(UnitManager& manager);
 
-	bool addBuildRequest(bw::UnitType);
-	int countBuildRequests(bw::UnitType);
-	int countBuildings(bw::UnitType);
+	bool addBuildRequest(bw::UnitType buildingType);
+	int countBuildRequests(bw::UnitType buildingType);
+	
 
 
 protected:

@@ -1,6 +1,7 @@
-#pragam once
+#pragma once
 
 #include "Tools.h"
+#include "UnitManager.h"
 
 //The actual ProductionManager.h
 
