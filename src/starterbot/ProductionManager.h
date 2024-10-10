@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./Tools.h"
+#include "Tools.h"
 #include "UnitManager.h"
 
 //The actual ProductionManager.h
@@ -11,7 +11,7 @@ class ProductionManager : public EventReceiver {
 private:
 	bw::Unitset m_allUnits;
 	bw::Unitset m_freeUnits;
-	UnitManager& unitManager; //store a reference to UnitManager(?)
+	UnitManager& m_unitManager; //store a reference to UnitManager(?)
 	bw::Unitset m_reservedWorkers; //a set of reserved workers
 
 
@@ -25,6 +25,7 @@ public:
 
 	bool addBuildRequest(bw::UnitType buildingType);
 	int countBuildRequests(bw::UnitType buildingType);
+	void sendIdleWorkersToMinerals();
 	
 
 

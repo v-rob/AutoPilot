@@ -16,7 +16,8 @@ void StrategyManager::onStart() {
         {ActionType::TRAIN, bw::UnitTypes::Protoss_Probe, 8},
         {ActionType::BUILD, bw::UnitTypes::Protoss_Pylon, 1},
         {ActionType::TRAIN, bw::UnitTypes::Protoss_Probe, 15},
-        {ActionType::BUILD, bw::UnitTypes::Protoss_Pylon, 2},
+        {ActionType::BUILD, bw::UnitTypes::Protoss_Gateway, 1},
+        {ActionType::TRAIN, bw::UnitTypes::Protoss_Zealot, 5},
     };
     m_strategyItem = 0;
 }
@@ -30,21 +31,21 @@ void StrategyManager::onFrame() {
 
     switch (item.type) {
     case ActionType::BUILD: {
-if 0
-        int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
-        int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true) +
-            m_productionManager.countBuildRequests(item.unit);
+            int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
+            int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true) +
+                m_productionManager.countBuildRequests(item.unit);
 
-        if (current >= item.count) {
-            m_strategyItem++;
-        }
+            if (current >= item.count) {
+                m_strategyItem++;
+            }
 
-        while (progress < item.count && m_productionManager.addBuildRequest(item.unit)) {
-            progress++;
+            while (progress < item.count && m_productionManager.addBuildRequest(item.unit)) {
+                printf("Building\n");
+                progress++;
+            }
+            
+            break;
         }
-endif
-        break;
-    }
 
     case ActionType::TRAIN: {
         int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
