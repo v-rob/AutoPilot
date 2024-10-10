@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BuildingManager.h"
+#include "IntelManager.h"
 #include "ProductionManager.h"
 #include "Tools.h"
 #include "UnitManager.h"
@@ -23,6 +24,7 @@ struct ActionItem {
 class StrategyManager : public EventReceiver {
 private:
     UnitManager m_unitManager;
+    IntelManager m_intelManager;
 
     ProductionManager m_productionManager;
     BuildingManager m_buildingManager;

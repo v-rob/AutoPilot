@@ -7,6 +7,8 @@ StrategyManager::StrategyManager() :
 
 void StrategyManager::notifyMembers(const bw::Event& event) {
     m_unitManager.notifyReceiver(event);
+    m_intelManager.notifyReceiver(event);
+
     m_productionManager.notifyReceiver(event);
     m_buildingManager.notifyReceiver(event);
 }
