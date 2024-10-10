@@ -3,35 +3,20 @@
 #include "Tools.h"
 #include "UnitManager.h"
 
-//The actual ProductionManager.h
-
-//good use of #include <climits> e.g. INT_MAX
-
 class ProductionManager : public EventReceiver {
 private:
-	bw::Unitset m_allUnits;
-	bw::Unitset m_freeUnits;
-	UnitManager& m_unitManager; //store a reference to UnitManager(?)
-	bw::Unitset m_reservedWorkers; //a set of reserved workers
+    UnitManager& m_unitManager;
 
+    bw::Unitset m_builders;
 
 public:
-	//what are the matchUnit/matchUnits/matchCount coming from?
-	//what are peekUnit/peekUnits/peekCount coming from?
-	
+    ProductionManager(UnitManager& unitManager);
 
-	//ProductionManager(UnitManager& manager)
-	ProductionManager(UnitManager& manager);
-
-	bool addBuildRequest(bw::UnitType buildingType);
-	int countBuildRequests(bw::UnitType buildingType);
-	void sendIdleWorkersToMinerals();
-	
-
+    bool addBuildRequest(bw::UnitType type);
+    int countBuildRequests(bw::UnitType type);
 
 protected:
-	virtual void onStart() override;
-	virtual void onFrame() override;
-	virtual void onUnitDestroy(bw::Unit unit) override;
-
+    virtual void onStart() override;
+    virtual void onFrame() override;
+    virtual void onUnitDestroy(bw::Unit unit) override;
 };

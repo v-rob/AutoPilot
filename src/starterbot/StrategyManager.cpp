@@ -30,24 +30,25 @@ void StrategyManager::onFrame() {
     const ActionItem& item = m_strategy[m_strategyItem];
 
     switch (item.type) {
-    case ActionType::BUILD: {
-            int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
-            int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true) +
-                m_productionManager.countBuildRequests(item.unit);
+    case ActionType::BUILD:
+    {
+        int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
+        int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true) +
+            m_productionManager.countBuildRequests(item.unit);
 
-            if (current >= item.count) {
-                m_strategyItem++;
-            }
-
-            while (progress < item.count && m_productionManager.addBuildRequest(item.unit)) {
-                printf("Building\n");
-                progress++;
-            }
-            
-            break;
+        if (current >= item.count) {
+            m_strategyItem++;
         }
 
-    case ActionType::TRAIN: {
+        while (progress < item.count && m_productionManager.addBuildRequest(item.unit)) {
+            progress++;
+        }
+
+        break;
+    }
+
+    case ActionType::TRAIN:
+    {
         int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
         int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true);
 
