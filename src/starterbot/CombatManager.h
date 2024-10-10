@@ -17,7 +17,7 @@ private:
     bw::Unitset m_army;
 
 public:
-    CombatManager(IntelManager& intelManager);
+    CombatManager(UnitManager& unitManager, IntelManager& intelManager);
 
     void chooseNewTarget(bw::Unit target);
     void attack();

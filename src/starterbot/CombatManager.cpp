@@ -1,27 +1,32 @@
 #include "CombatManager.h"
 
 
-CombatManager::CombatManager(IntelManager& intelManager) :
-    m_intelManager(intelManager), m_targetRadius(50) {
+CombatManager::CombatManager(UnitManager& unitManager, IntelManager& intelManager) :
+    m_unitManager(unitManager), m_intelManager(intelManager), m_targetRadius(50) {
 }
 
 void CombatManager::chooseNewTarget(bw::Unit target) {
     m_target = target;
 
-    for (const auto& [unit, position] : m_intelManager.m_enemyBuildings) {
-        if (position == bw::Positions::Unknown) {
+    bw::Unitset enemyBuildings = m_intelManager.findUnits(bw::Filter::IsBuilding);
+
+    // set all enemy buildings close by as targets
+    for (bw::Unit building : enemyBuildings) {
+        bw::TilePosition position = m_intelManager.getLastPosition(building);
+
+        if (position == bw::TilePositions::Unknown) {
             continue;
         }
 
-        if (target->getDistance(position) < m_targetRadius) {
-            m_targetBuildings.insert(unit);
+        if (target->getDistance(bw::Position(position)) < m_targetRadius) {
+            m_targetBuildings.insert(building);
         }
     }
 }
 
 void CombatManager::attack() {
     // for now, just grab any known enemy building
-    bw::Unit target = m_intelManager.m_enemyBuildings.begin();
+    bw::Unit target = m_intelManager.findUnit(true);
     chooseNewTarget(target);
 
     // reserve all units that can attack
@@ -37,9 +42,10 @@ void CombatManager::onFrame() {
         return;
     }
 
-    if (m_intelManager.m_enemyBuildings.find(m_target) == bw::Positions::Unknown) {
+    // if target is dead or can't be found, select a new one
+    if (!m_target->isVisible() || m_intelManager.getLastPosition(m_target) == bw::TilePositions::Unknown) {
         m_targetBuildings.erase(m_target);
-        m_target = m_targetBuildings.begin();
+        m_target = m_targetBuildings.begin(0);
     }
 
     m_army.attack(m_target);
