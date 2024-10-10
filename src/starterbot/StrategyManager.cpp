@@ -1,13 +1,13 @@
 #include "StrategyManager.h"
 
 StrategyManager::StrategyManager() :
-//    m_productionManager(m_unitManager),
+    m_productionManager(m_unitManager),
     m_buildingManager(m_unitManager) {
 }
 
 void StrategyManager::notifyMembers(const bw::Event& event) {
     m_unitManager.notifyReceiver(event);
-//    m_productionManager.notifyReceiver(event);
+    m_productionManager.notifyReceiver(event);
     m_buildingManager.notifyReceiver(event);
 }
 
@@ -16,7 +16,8 @@ void StrategyManager::onStart() {
         {ActionType::TRAIN, bw::UnitTypes::Protoss_Probe, 8},
         {ActionType::BUILD, bw::UnitTypes::Protoss_Pylon, 1},
         {ActionType::TRAIN, bw::UnitTypes::Protoss_Probe, 15},
-        {ActionType::BUILD, bw::UnitTypes::Protoss_Pylon, 2},
+        {ActionType::BUILD, bw::UnitTypes::Protoss_Gateway, 1},
+        {ActionType::TRAIN, bw::UnitTypes::Protoss_Zealot, 5},
     };
     m_strategyItem = 0;
 }
@@ -29,8 +30,8 @@ void StrategyManager::onFrame() {
     const ActionItem& item = m_strategy[m_strategyItem];
 
     switch (item.type) {
-    case ActionType::BUILD: {
-#if 0
+    case ActionType::BUILD:
+    {
         int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
         int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true) +
             m_productionManager.countBuildRequests(item.unit);
@@ -42,11 +43,12 @@ void StrategyManager::onFrame() {
         while (progress < item.count && m_productionManager.addBuildRequest(item.unit)) {
             progress++;
         }
-#endif
+
         break;
     }
 
-    case ActionType::TRAIN: {
+    case ActionType::TRAIN:
+    {
         int current = m_unitManager.peekCount(bw::Filter::GetType == item.unit, false);
         int progress = m_unitManager.peekCount(bw::Filter::GetType == item.unit, true);
 
