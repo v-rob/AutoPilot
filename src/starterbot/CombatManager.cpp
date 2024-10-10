@@ -45,7 +45,10 @@ void CombatManager::onFrame() {
     // if target is dead or can't be found, select a new one
     if (!m_target->isVisible() || m_intelManager.getLastPosition(m_target) == bw::TilePositions::Unknown) {
         m_targetBuildings.erase(m_target);
-        m_target = m_targetBuildings.begin(0);
+
+        if (m_targetBuildings.size() != 0) {
+            m_target = *m_targetBuildings.begin();
+        }
     }
 
     m_army.attack(m_target);
