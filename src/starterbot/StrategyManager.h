@@ -3,6 +3,7 @@
 #include "BuildingManager.h"
 #include "IntelManager.h"
 #include "ProductionManager.h"
+#include "ScoutManager.h"
 #include "Tools.h"
 #include "UnitManager.h"
 
@@ -16,9 +17,13 @@ enum class ActionType {
 };
 
 struct ActionItem {
-    ActionType type;
-    bw::UnitType unit;
-    int count;
+    static constexpr int NONE = -1;
+
+    ActionType action;
+    int depends;
+
+    bw::UnitType type = bw::UnitTypes::None;
+    int count = 0;
 };
 
 class StrategyManager : public EventReceiver {
@@ -28,9 +33,10 @@ private:
 
     ProductionManager m_productionManager;
     BuildingManager m_buildingManager;
+    ScoutManager m_scoutManager;
 
     std::vector<ActionItem> m_strategy;
-    int m_strategyItem;
+    std::vector<bool> m_completion;
 
 public:
     StrategyManager();

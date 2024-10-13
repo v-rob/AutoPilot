@@ -5,7 +5,11 @@ ProductionManager::ProductionManager(UnitManager& unitManager) :
 }
 
 bool ProductionManager::addBuildRequest(bw::UnitType type) {
-    bw::TilePosition pos = g_game->getBuildLocation(type, g_self->getStartLocation(), 64, false);
+    if (type.mineralPrice() > g_self->minerals()) {
+        return false;
+    }
+
+    bw::TilePosition pos = g_game->getBuildLocation(type, g_self->getStartLocation(), 32, false);
     if (pos == bw::TilePositions::Invalid) {
         return false;
     }
