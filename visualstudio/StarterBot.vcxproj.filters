@@ -8,6 +8,8 @@
     <ClCompile Include="..\src\starterbot\UnitManager.cpp" />
     <ClCompile Include="..\src\starterbot\BuildingManager.cpp" />
     <ClCompile Include="..\src\starterbot\ProductionManager.cpp" />
+    <ClCompile Include="..\src\starterbot\IntelManager.cpp" />
+    <ClCompile Include="..\src\starterbot\ScoutManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\starterbot\AutoPilotBot.h" />
@@ -16,5 +18,7 @@
     <ClInclude Include="..\src\starterbot\UnitManager.h" />
     <ClInclude Include="..\src\starterbot\BuildingManager.h" />
     <ClInclude Include="..\src\starterbot\ProductionManager.h" />
+    <ClInclude Include="..\src\starterbot\IntelManager.h" />
+    <ClInclude Include="..\src\starterbot\ScoutManager.h" />
   </ItemGroup>
 </Project>
