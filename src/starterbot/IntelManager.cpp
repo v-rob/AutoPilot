@@ -54,9 +54,13 @@ void IntelManager::onFrame() {
         }
     }
 
-    for (auto& [unit, pos] : m_lastPositions) {
-        if (!unit->isVisible() && g_game->isVisible(pos)) {
-            m_lastPositions.erase(unit);
+    auto it = m_lastPositions.begin();
+
+    while (it != m_lastPositions.end()) {
+        if (!it->first->isVisible() && g_game->isVisible(it->second)) {
+            it = m_lastPositions.erase(it);
+        } else {
+            it++;
         }
     }
 }
