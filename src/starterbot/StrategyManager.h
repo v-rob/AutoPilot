@@ -3,6 +3,7 @@
 #include "BuildingManager.h"
 #include "IntelManager.h"
 #include "ProductionManager.h"
+#include "CombatManager.h"
 #include "ScoutManager.h"
 #include "Tools.h"
 #include "UnitManager.h"
@@ -33,6 +34,7 @@ private:
 
     ProductionManager m_productionManager;
     BuildingManager m_buildingManager;
+    CombatManager m_combatManager;
     ScoutManager m_scoutManager;
 
     std::vector<ActionItem> m_strategy;

@@ -23,5 +23,6 @@ public:
     void attack();
 
 protected:
+    virtual void onStart() override;
     virtual void onFrame() override;
 };

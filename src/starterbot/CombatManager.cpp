@@ -25,25 +25,31 @@ void CombatManager::chooseNewTarget(bw::Unit target) {
 }
 
 void CombatManager::attack() {
-    // for now, just grab any known enemy building
-    bw::Unit target = m_intelManager.findUnit(true);
+    // for now, just grab any any known enemy unit
+    bw::Unit target = m_intelManager.findUnit([](const auto&) { return true; });
     chooseNewTarget(target);
 
-    // reserve all units that can attack
-    bw::Unitset army = m_unitManager.reserveUnits(bw::Filter::CanAttack);
+    // reserve all nonworkers that can attack
+    bw::Unitset army = m_unitManager.reserveUnits(bw::Filter::CanAttack && !bw::Filter::IsWorker);
     m_army.insert(army.begin(), army.end());
 
     m_attacking = true;
 }
 
+void CombatManager::onStart() {
+    m_army.clear();
+    m_targetBuildings.clear();
+    m_target = nullptr;
+    m_attacking = false;
+}
 
 void CombatManager::onFrame() {
     if (!m_attacking) {
         return;
     }
 
-    // if target is dead or can't be found, select a new one
-    if (!m_target->isVisible() || m_intelManager.getLastPosition(m_target) == bw::TilePositions::Unknown) {
+    // if target can't be found, select a new one
+    if (m_intelManager.getLastPosition(m_target) == bw::TilePositions::Unknown) {
         m_targetBuildings.erase(m_target);
 
         if (m_targetBuildings.size() != 0) {
@@ -51,5 +57,6 @@ void CombatManager::onFrame() {
         }
     }
 
-    m_army.attack(m_target);
+    bw::TilePosition targetPosition = m_intelManager.getLastPosition(m_target);
+    m_army.attack(bw::Position(targetPosition));
 }

@@ -3,6 +3,7 @@
 StrategyManager::StrategyManager() :
     m_productionManager(m_unitManager),
     m_buildingManager(m_unitManager),
+    m_combatManager(m_unitManager, m_intelManager),
     m_scoutManager(m_unitManager) {
 }
 
@@ -12,6 +13,7 @@ void StrategyManager::notifyMembers(const bw::Event& event) {
 
     m_productionManager.notifyReceiver(event);
     m_buildingManager.notifyReceiver(event);
+    m_combatManager.notifyReceiver(event);
     m_scoutManager.notifyReceiver(event);
 }
 
@@ -81,7 +83,8 @@ void StrategyManager::onFrame() {
         }
 
         case ActionType::ATTACK:
-            // TODO
+            m_combatManager.attack();
+            m_completion[i] = true;
             break;
         }
     }
