@@ -3,7 +3,8 @@
 StrategyManager::StrategyManager() :
     m_productionManager(m_unitManager),
     m_buildingManager(m_unitManager),
-    m_scoutManager(m_unitManager) {
+    m_scoutManager(m_unitManager),
+    m_combatManager(m_unitManager, m_intelManager) {
 }
 
 void StrategyManager::notifyMembers(const bw::Event& event) {
@@ -13,20 +14,29 @@ void StrategyManager::notifyMembers(const bw::Event& event) {
     m_productionManager.notifyReceiver(event);
     m_buildingManager.notifyReceiver(event);
     m_scoutManager.notifyReceiver(event);
+    m_combatManager.notifyReceiver(event);
 }
 
 void StrategyManager::onStart() {
     m_strategy = {
-        {ActionType::TRAIN,  ActionItem::NONE, bw::UnitTypes::Protoss_Probe,        8 }, // 0
+        {ActionType::TRAIN,  ActionItem::NONE, bw::UnitTypes::Protoss_Probe,        7 }, // 0
         {ActionType::BUILD,  0,                bw::UnitTypes::Protoss_Pylon,        1 }, // 1
-        {ActionType::TRAIN,  1,                bw::UnitTypes::Protoss_Probe,        9 }, // 2
-        {ActionType::BUILD,  2,                bw::UnitTypes::Protoss_Gateway,      1 }, // 3
-        {ActionType::BUILD,  3,                bw::UnitTypes::Protoss_Gateway,      2 }, // 4
-        {ActionType::SCOUT,  4,                bw::UnitTypes::Protoss_Probe,        1 }, // 5
-        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Zealot,       4 }, // 6
-        {ActionType::BUILD,  5,                bw::UnitTypes::Protoss_Pylon,        2 }, // 7
-        {ActionType::TRAIN,  5,                bw::UnitTypes::Protoss_Probe,        16}, // 0
-        {ActionType::ATTACK, 6,                                                       }, // 9
+        {ActionType::SCOUT,  1,                bw::UnitTypes::Protoss_Probe,        1 }, // 2
+        {ActionType::BUILD,  1,                bw::UnitTypes::Protoss_Gateway,      1 }, // 3
+        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Zealot,       2 }, // 4
+        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Probe,        13}, // 5
+        {ActionType::ATTACK, 4,                                                       }, // 6
+
+//        {ActionType::TRAIN,  ActionItem::NONE, bw::UnitTypes::Protoss_Probe,        8 }, // 0
+//        {ActionType::BUILD,  0,                bw::UnitTypes::Protoss_Pylon,        1 }, // 1
+//        {ActionType::TRAIN,  1,                bw::UnitTypes::Protoss_Probe,        9 }, // 2
+//        {ActionType::BUILD,  2,                bw::UnitTypes::Protoss_Gateway,      1 }, // 3
+//        {ActionType::BUILD,  3,                bw::UnitTypes::Protoss_Gateway,      2 }, // 4
+//        {ActionType::SCOUT,  4,                bw::UnitTypes::Protoss_Probe,        1 }, // 5
+//        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Zealot,       4 }, // 6
+//        {ActionType::BUILD,  5,                bw::UnitTypes::Protoss_Pylon,        2 }, // 7
+//        {ActionType::TRAIN,  5,                bw::UnitTypes::Protoss_Probe,        16}, // 8
+//        {ActionType::ATTACK, 6,                                                       }, // 9
     };
 
     m_completion.clear();
@@ -81,7 +91,10 @@ void StrategyManager::onFrame() {
         }
 
         case ActionType::ATTACK:
-            // TODO
+            if (!m_completion[i]) {
+                m_combatManager.attack();
+                m_completion[i] = true;
+            }
             break;
         }
     }

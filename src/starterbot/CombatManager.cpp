@@ -1,55 +1,61 @@
 #include "CombatManager.h"
 
-
 CombatManager::CombatManager(UnitManager& unitManager, IntelManager& intelManager) :
-    m_unitManager(unitManager), m_intelManager(intelManager), m_targetRadius(50) {
-}
-
-void CombatManager::chooseNewTarget(bw::Unit target) {
-    m_target = target;
-
-    bw::Unitset enemyBuildings = m_intelManager.findUnits(bw::Filter::IsBuilding);
-
-    // set all enemy buildings close by as targets
-    for (bw::Unit building : enemyBuildings) {
-        bw::TilePosition position = m_intelManager.getLastPosition(building);
-
-        if (position == bw::TilePositions::Unknown) {
-            continue;
-        }
-
-        if (target->getDistance(bw::Position(position)) < m_targetRadius) {
-            m_targetBuildings.insert(building);
-        }
-    }
+    m_unitManager(unitManager),
+    m_intelManager(intelManager) {
 }
 
 void CombatManager::attack() {
-    // for now, just grab any known enemy building
-    bw::Unit target = m_intelManager.findUnit(true);
-    chooseNewTarget(target);
-
-    // reserve all units that can attack
-    bw::Unitset army = m_unitManager.reserveUnits(bw::Filter::CanAttack);
-    m_army.insert(army.begin(), army.end());
-
     m_attacking = true;
 }
 
+void CombatManager::onStart() {
+    m_attacking = false;
+    m_soldiers.clear();
+
+    m_targetPos = g_self->getStartLocation();
+    m_target = nullptr;
+}
 
 void CombatManager::onFrame() {
     if (!m_attacking) {
         return;
     }
 
-    // if target is dead or can't be found, select a new one
-    if (!m_target->isVisible() || m_intelManager.getLastPosition(m_target) == bw::TilePositions::Unknown) {
-        m_targetBuildings.erase(m_target);
+    bw::Unitset newSoldiers = m_unitManager.reserveUnits(bw::Filter::CanAttack);
+    m_soldiers.insert(newSoldiers.begin(), newSoldiers.end());
 
-        if (m_targetBuildings.size() != 0) {
-            m_target = *m_targetBuildings.begin();
-        }
+    bw::Unit found = m_intelManager.findUnit(nullptr);
+
+    if (found == nullptr) {
+        bw::Unit target = m_intelManager.peekUnit([&](bw::Unit unit) {
+            return m_intelManager.getLastPosition(unit) != bw::TilePositions::Unknown;
+        });
+
+        m_targetPos = target == nullptr ?
+            bw::TilePositions::Invalid : m_intelManager.getLastPosition(target);
+        m_target = nullptr;
+    } else if (m_target == nullptr) {
+        m_targetPos = bw::TilePositions::None;
+        bw::Unit target = found;
     }
 
-    m_army.attack(m_target);
+    for (bw::Unit soldier : m_soldiers) {
+        if (m_targetPos == bw::TilePositions::Invalid) {
+            soldier->stop();
+        } else if (m_targetPos != bw::TilePositions::None &&
+                bw::TilePosition(soldier->getTargetPosition()) != m_targetPos) {
+            soldier->move(bw::Position(m_targetPos));
+        } else if (m_target != nullptr && soldier->getTarget() != m_target) {
+            soldier->attack(m_target);
+        }
+    }
+}
+
+void CombatManager::onUnitDestroy(bw::Unit unit) {
+    m_soldiers.erase(unit);
+
+    if (m_target == unit) {
+        m_target = nullptr;
+    }
 }

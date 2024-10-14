@@ -2,7 +2,7 @@
 
 bw::Unit UnitManager::matchUnit(const bw::Unitset& units, const bw::UnitFilter& pred) {
     for (bw::Unit unit : units) {
-        if (pred(unit)) {
+        if (!pred.isValid() || pred(unit)) {
             return unit;
         }
     }
@@ -18,7 +18,7 @@ bw::Unitset UnitManager::matchUnits(const bw::Unitset& units, const bw::UnitFilt
             break;
         }
 
-        if (pred(unit)) {
+        if (!pred.isValid() || pred(unit)) {
             matches.insert(unit);
         }
     }
@@ -30,7 +30,7 @@ int UnitManager::matchCount(const bw::Unitset& units, const bw::UnitFilter& pred
     int count = 0;
 
     for (bw::Unit unit : units) {
-        if (pred(unit)) {
+        if (!pred.isValid() || pred(unit)) {
             count++;
         }
     }
@@ -84,9 +84,7 @@ void UnitManager::releaseUnit(bw::Unit& unit, const bw::UnitFilter& pred) {
 }
 
 void UnitManager::releaseUnits(bw::Unitset& units, const bw::UnitFilter& pred) {
-    auto it = units.begin();
-
-    while (it != units.end()) {
+    for (auto it = units.begin(); it != units.end();) {
         bw::Unit unit = *it;
 
         if (!pred.isValid() || pred(unit)) {
