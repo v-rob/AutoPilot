@@ -54,20 +54,20 @@ void IntelManager::onFrame() {
         }
     }
 
-    auto it = m_lastPositions.begin();
+    for (auto it = m_visibleUnits.begin(); it != m_visibleUnits.end();) {
+        if (!(*it)->isVisible()) {
+            it = m_visibleUnits.erase(it);
+        } else {
+            ++it;
+        }
+    }
 
-    while (it != m_lastPositions.end()) {
+    for (auto it = m_lastPositions.begin(); it != m_lastPositions.end();) {
         if (!it->first->isVisible() && g_game->isVisible(it->second)) {
             it = m_lastPositions.erase(it);
         } else {
-            it++;
+            ++it;
         }
-    }
-}
-
-void IntelManager::onUnitHide(bw::Unit unit) {
-    if (isEnemy(unit)) {
-        m_visibleUnits.erase(unit);
     }
 }
 

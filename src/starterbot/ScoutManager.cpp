@@ -31,6 +31,7 @@ void ScoutManager::onFrame() {
         for (bw::TilePosition pos : g_game->getStartLocations()) {
             if (!g_game->isExplored(pos)) {
                 scout->move(bw::Position(pos));
+                break;
             }
         }
     }

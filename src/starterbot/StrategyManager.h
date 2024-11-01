@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BuildingManager.h"
+#include "CombatManager.h"
 #include "IntelManager.h"
 #include "ProductionManager.h"
 #include "ScoutManager.h"
@@ -34,6 +35,7 @@ private:
     ProductionManager m_productionManager;
     BuildingManager m_buildingManager;
     ScoutManager m_scoutManager;
+    CombatManager m_combatManager;
 
     std::vector<ActionItem> m_strategy;
     std::vector<bool> m_completion;

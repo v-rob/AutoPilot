@@ -27,6 +27,5 @@ public:
 protected:
     virtual void onStart() override;
     virtual void onFrame() override;
-    virtual void onUnitHide(bw::Unit unit) override;
     virtual void onUnitDestroy(bw::Unit unit) override;
 };
