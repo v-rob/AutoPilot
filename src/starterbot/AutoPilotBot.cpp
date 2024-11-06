@@ -1,5 +1,8 @@
 #include "AutoPilotBot.h"
 
+// Chooses the frame time in milliseconds that the game should be run at.
+constexpr int LOCAL_SPEED = 0;
+
 void AutoPilotBot::notifyMembers(const bw::Event& event) {
     m_strategyManager.notifyReceiver(event);
 }
@@ -9,7 +12,7 @@ void AutoPilotBot::onStart() {
 
     // Set the speed at which our configuration option says the game should be run at.
     g_game->setLocalSpeed(LOCAL_SPEED);
-    g_game->setFrameSkip(0);
+    g_game->setFrameSkip(1);
 
     // We want the user to be able to send explicit user input.
     g_game->enableFlag(bw::Flag::UserInput);

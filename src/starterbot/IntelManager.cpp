@@ -45,6 +45,9 @@ void IntelManager::onStart() {
 }
 
 void IntelManager::onFrame() {
+    // Loop through all the units in the game. If the unit is known to be an enemy (which
+    // can only be confirmed if the unit is currently visible), then add it to our lists
+    // of units and record its current position as the last known position.
     for (bw::Unit unit : g_game->getAllUnits()) {
         if (isEnemy(unit)) {
             m_enemyUnits.insert(unit);
@@ -54,14 +57,9 @@ void IntelManager::onFrame() {
         }
     }
 
-    for (auto it = m_visibleUnits.begin(); it != m_visibleUnits.end();) {
-        if (!(*it)->isVisible()) {
-            it = m_visibleUnits.erase(it);
-        } else {
-            ++it;
-        }
-    }
-
+    // Loop through all known last positions. If the unit is not currently visible, but
+    // the last known position currently is visible, then the unit must have moved. So,
+    // remove its position information.
     for (auto it = m_lastPositions.begin(); it != m_lastPositions.end();) {
         if (!it->first->isVisible() && g_game->isVisible(it->second)) {
             it = m_lastPositions.erase(it);
@@ -71,11 +69,13 @@ void IntelManager::onFrame() {
     }
 }
 
-void IntelManager::onUnitDestroy(bw::Unit unit) {
-    if (isEnemy(unit)) {
-        m_enemyUnits.erase(unit);
-        m_visibleUnits.erase(unit);
+void IntelManager::onUnitHide(bw::Unit unit) {
+    m_visibleUnits.erase(unit);
+}
 
-        m_lastPositions.erase(unit);
-    }
+void IntelManager::onUnitDestroy(bw::Unit unit) {
+    m_enemyUnits.erase(unit);
+    m_visibleUnits.erase(unit);
+
+    m_lastPositions.erase(unit);
 }
