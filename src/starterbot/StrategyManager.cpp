@@ -24,10 +24,11 @@ void StrategyManager::onStart() {
         {ActionType::TRAIN,  ActionItem::NONE, bw::UnitTypes::Protoss_Probe,        7 }, // 0
         {ActionType::BUILD,  0,                bw::UnitTypes::Protoss_Pylon,        1 }, // 1
         {ActionType::SCOUT,  1,                bw::UnitTypes::Protoss_Probe,        1 }, // 2
+        {ActionType::BUILD,  1,                bw::UnitTypes::Protoss_Assimilator,  1 }, // 4
         {ActionType::BUILD,  1,                bw::UnitTypes::Protoss_Gateway,      1 }, // 3
-        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Zealot,       2 }, // 4
-        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Probe,        13}, // 5
-        {ActionType::ATTACK, 4,                                                       }, // 6
+        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Zealot,       2 }, // 5
+        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Probe,        13}, // 6
+        {ActionType::ATTACK, 4,                                                       }, // 7
     };
 
     // Make sure we reset the completion vector to all false values and resize it to be
