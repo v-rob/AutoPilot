@@ -173,14 +173,17 @@ void ProductionManager::onFrame() {
         }
     }
 
+    // If a unit in already gathering gas, leave it be
     for (bw::Unit unit : m_gas_gatherers) {
         if (unit->isGatheringGas()) {
             continue;
         }
 
+        // Get the closest refinery to the starting location
         bw::Unit refinery = g_game->getClosestUnit(
             bw::Position(g_self->getStartLocation()), bw::Filter::IsRefinery);
 
+        // Check if the refinery is null, if not, gather gas
         if (refinery != nullptr) {
             unit->gather(refinery);
         }
