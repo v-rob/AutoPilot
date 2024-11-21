@@ -166,6 +166,26 @@ void ProductionManager::onFrame() {
     // finished morphing into another unit type.
     m_unitManager.releaseUnits(m_trainers, !bw::IsTraining && !bw::IsMorphing);
 
+    // Check to see if refinery exists
+    for (bw::Unit unit : m_unitManager.borrowUnits(bw::Filter::IsRefinery)) {
+        if (m_gas_gatherers.size() < 2) {
+            m_gas_gatherers = m_unitManager.reserveUnits(bw::Filter::IsWorker, 2);
+        }
+    }
+
+    for (bw::Unit unit : m_gas_gatherers) {
+        if (unit->isGatheringGas()) {
+            continue;
+        }
+
+        bw::Unit refinery = g_game->getClosestUnit(
+            bw::Position(g_self->getStartLocation()), bw::Filter::IsRefinery);
+
+        if (refinery != nullptr) {
+            unit->gather(refinery);
+        }
+    }
+
     // We borrow as many workers as we can that are not already reserved by some manager
     // and instruct them to gather resources.
     for (bw::Unit unit : m_unitManager.borrowUnits(bw::IsWorker)) {
