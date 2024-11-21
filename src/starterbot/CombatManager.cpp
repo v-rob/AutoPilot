@@ -1,5 +1,7 @@
 #include "CombatManager.h"
 
+#include "CombatSimulator.h"
+
 CombatManager::CombatManager(UnitManager& unitManager) :
     m_unitManager(unitManager) {
 }
@@ -11,8 +13,6 @@ void CombatManager::attack() {
 void CombatManager::onStart() {
     m_attacking = false;
     m_soldiers.clear();
-
-    m_target = nullptr;
 }
 
 void CombatManager::onFrame() {
@@ -25,43 +25,23 @@ void CombatManager::onFrame() {
     bw::Unitset newSoldiers = m_unitManager.reserveUnits(bw::Filter::CanAttack);
     m_soldiers.insert(newSoldiers.begin(), newSoldiers.end());
 
-    // If we have a target that is no longer alive, we need to choose a new one.
-    if (m_target != nullptr && !m_unitManager.isAlive(m_target)) {
-        m_target = nullptr;
-    }
+    // Huzzah! The random walk way is the only way! Or not...
+//    AttackList attacks = runCombatSimulation(
+//        m_soldiers, m_intelManager.peekUnits(bw::Filter::IsCompleted));
+//
+//    for (const auto& attack : attacks) {
+//        attack.first->attack(attack.second);
+//    }
+}
 
-    // If we don't have a current target or our target is not currently visible, try to
-    // find a visible unit to attack.
-    if (m_target == nullptr || !m_target->isVisible()) {
-        bw::Unit possible = m_unitManager.enemyUnit(bw::Filter::IsVisible);
-        if (possible != nullptr) {
-            m_target = possible;
-        }
-    }
+void CombatManager::onDraw() {
+    bw::Unitset enemies = m_intelManager.peekUnits(bw::Filter::IsCompleted);
+    std::vector<bw::Unitset> clusters = findUnitClusters(7, enemies);
 
-    // If we don't have any visible unit to set as our target, set it to any known enemy
-    // unit whatsoever.
-    if (m_target == nullptr) {
-        m_target = m_unitManager.enemyUnit();
-    }
-
-    // Now that we (hopefully) have a target, send all the soldiers to attack it. If we
-    // don't have a target, we can't do anything.
-    for (bw::Unit soldier : m_soldiers) {
-        if (m_target == nullptr) {
-            // If the target is invalid, then we have nowhere to send the army. So, just
-            // stop each soldier entirely.
-            soldier->stop();
-        } else if (m_target->isVisible()) {
-            // If the target unit is visible, then have the soldiers attack it directly.
-            bw::Unit real = m_unitManager.getReal(m_target);
-            if (soldier->getTarget() != real) {
-                soldier->attack(real);
-            }
-        } else {
-            // Otherwise, send the soldiers to attack the last known position of the unit.
-            if (soldier->getTargetPosition() != m_target->getPosition()) {
-                soldier->attack(m_target->getPosition());
+    for (const bw::Unitset& cluster : clusters) {
+        for (bw::Unit first : cluster) {
+            for (bw::Unit second : cluster) {
+                g_game->drawLineMap(first->getPosition(), second->getPosition(), bw::Colors::Orange);
             }
         }
     }
