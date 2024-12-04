@@ -1,7 +1,7 @@
 #include "AutoPilotBot.h"
 
 // Chooses the frame time in milliseconds that the game should be run at.
-constexpr int LOCAL_SPEED = 0;
+constexpr int LOCAL_SPEED = 10;
 
 void AutoPilotBot::notifyMembers(const bw::Event& event) {
     m_strategyManager.notifyReceiver(event);
@@ -42,16 +42,10 @@ void AutoPilotBot::drawCommands() {
     for (bw::Unit unit : g_self->getUnits()) {
         const bw::UnitCommand& command = unit->getLastCommand();
 
-        // If the previous command had a ground position target, draw it in red.
+        // If the previous command had a ground position target, draw it in green.
         if (command.getTargetPosition() != bw::Positions::None) {
             g_game->drawLineMap(unit->getPosition(),
-                command.getTargetPosition(), bw::Colors::Red);
-        }
-
-        // If the previous command had a tile position target, draw it in green.
-        if (command.getTargetTilePosition() != bw::TilePositions::None) {
-            g_game->drawLineMap(unit->getPosition(),
-                bw::Position(command.getTargetTilePosition()), bw::Colors::Green);
+                command.getTargetPosition(), bw::Colors::Green);
         }
 
         // If the previous command had a unit target, draw it in white.

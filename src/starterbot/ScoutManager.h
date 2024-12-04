@@ -1,6 +1,5 @@
 #pragma once
 
-#include "IntelManager.h"
 #include "Tools.h"
 #include "UnitManager.h"
 

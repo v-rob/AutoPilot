@@ -21,9 +21,9 @@
   <ItemGroup>
     <ClInclude Include="..\src\starterbot\AutoPilotBot.h" />
     <ClInclude Include="..\src\starterbot\CombatManager.h" />
-    <ClInclude Include="..\src\starterbot\IntelManager.h" />
     <ClInclude Include="..\src\starterbot\ProductionManager.h" />
     <ClInclude Include="..\src\starterbot\ScoutManager.h" />
+    <ClInclude Include="..\src\starterbot\ShadowUnit.h" />
     <ClInclude Include="..\src\starterbot\StrategyManager.h" />
     <ClInclude Include="..\src\starterbot\Tools.h" />
     <ClInclude Include="..\src\starterbot\BuildingManager.h" />
@@ -31,7 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\starterbot\CombatManager.cpp" />
-    <ClCompile Include="..\src\starterbot\IntelManager.cpp" />
     <ClCompile Include="..\src\starterbot\main.cpp" />
     <ClCompile Include="..\src\starterbot\AutoPilotBot.cpp" />
     <ClCompile Include="..\src\starterbot\ProductionManager.cpp" />
