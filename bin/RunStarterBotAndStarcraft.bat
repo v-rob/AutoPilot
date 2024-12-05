@@ -1,3 +1,3 @@
-start cmd /K "StarterBot_d.exe"
+start cmd /K "StarterBot.exe"
 cd ../starcraft
 start cmd /c RunStarcraftWithBWAPI.bat
