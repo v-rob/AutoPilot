@@ -4,12 +4,11 @@ StrategyManager::StrategyManager() :
     m_productionManager(m_unitManager),
     m_buildingManager(m_unitManager),
     m_scoutManager(m_unitManager),
-    m_combatManager(m_unitManager, m_intelManager) {
+    m_combatManager(m_unitManager) {
 }
 
 void StrategyManager::notifyMembers(const bw::Event& event) {
     m_unitManager.notifyReceiver(event);
-    m_intelManager.notifyReceiver(event);
 
     m_productionManager.notifyReceiver(event);
     m_buildingManager.notifyReceiver(event);
@@ -52,7 +51,7 @@ void StrategyManager::onFrame() {
         {
             // If the current number of buildings (including buildings that are only
             // partially constructed) meets the quota, then we're done.
-            int current = m_unitManager.peekCount(bw::Filter::GetType == item.type, true);
+            int current = m_unitManager.selfCount(bw::Filter::GetType == item.type);
             int progress = current + m_productionManager.countBuildRequests(item.type);
 
             m_completion[i] = current >= item.count;
@@ -67,8 +66,9 @@ void StrategyManager::onFrame() {
         case ActionType::TRAIN:
         {
             // If the number of fully trained units meets the quota, then we're done.
-            int current = m_unitManager.peekCount(bw::Filter::GetType == item.type, false);
-            int progress = m_unitManager.peekCount(bw::Filter::GetType == item.type, true);
+            int current = m_unitManager.selfCount(
+                bw::Filter::GetType == item.type && bw::Filter::IsCompleted);
+            int progress = m_unitManager.selfCount(bw::Filter::GetType == item.type);
 
             m_completion[i] = current >= item.count;
 

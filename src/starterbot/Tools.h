@@ -2,6 +2,8 @@
 
 #include <BWAPI.h>
 
+#include <string>
+
 // We don't want to have to type obscenely long names like BWAPI::Broodwar all the time,
 // so we make some convenience using's and global variables.
 namespace bw {

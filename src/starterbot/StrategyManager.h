@@ -2,7 +2,6 @@
 
 #include "BuildingManager.h"
 #include "CombatManager.h"
-#include "IntelManager.h"
 #include "ProductionManager.h"
 #include "ScoutManager.h"
 #include "Tools.h"
@@ -45,7 +44,6 @@ struct ActionItem {
 class StrategyManager : public EventReceiver {
 private:
     UnitManager m_unitManager;
-    IntelManager m_intelManager;
 
     ProductionManager m_productionManager;
     BuildingManager m_buildingManager;
