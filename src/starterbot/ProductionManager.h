@@ -13,6 +13,8 @@ private:
     // gathering minerals are not reserved to keep them available for other managers.
     bw::Unitset m_workers;
 
+    bw::Unitset m_gas_gatherers;
+
 public:
     ProductionManager(UnitManager& unitManager);
 
