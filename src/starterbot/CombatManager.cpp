@@ -25,18 +25,23 @@ void CombatManager::onFrame() {
     bw::Unitset newSoldiers = m_unitManager.reserveUnits(bw::Filter::CanAttack);
     m_soldiers.insert(newSoldiers.begin(), newSoldiers.end());
 
-    // Huzzah! The random walk way is the only way! Or not...
-//    AttackList attacks = runCombatSimulation(
-//        m_soldiers, m_intelManager.peekUnits(bw::Filter::IsCompleted));
-//
-//    for (const auto& attack : attacks) {
-//        attack.first->attack(attack.second);
-//    }
+    AttackPairs attacks = runCombatSimulation(m_soldiers, m_unitManager.enemyUnits());
+
+    for (int i = 0; i < attacks.self.size(); i++) {
+        auto self_it = attacks.self[i].begin();
+        auto enemy_it = attacks.enemy[i].begin();
+
+        while (self_it != attacks.self[i].end() && enemy_it != attacks.enemy[i].end()) {
+            (*self_it)->attack(*enemy_it);
+
+            ++self_it;
+            ++enemy_it;
+        }
+    }
 }
 
 void CombatManager::onDraw() {
-    bw::Unitset enemies = m_intelManager.peekUnits(bw::Filter::IsCompleted);
-    std::vector<bw::Unitset> clusters = findUnitClusters(7, enemies);
+    std::vector<bw::Unitset> clusters = findUnitClusters(8, m_unitManager.enemyUnits());
 
     for (const bw::Unitset& cluster : clusters) {
         for (bw::Unit first : cluster) {
