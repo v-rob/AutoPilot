@@ -1,5 +1,9 @@
 #include "CombatSimulator.h"
 
+UnitList unitListOf(const bw::Unitset& units) {
+    return UnitList(units.begin(), units.end());
+}
+
 struct ClusterData {
     std::vector<bw::Position> centroids;
     GroupList clusters;
@@ -31,7 +35,7 @@ static std::pair<int, int> getClosestCentroid(ClusterData& d, bw::Unit unit, int
     return std::make_pair(minCluster, minDistance);
 }
 
-static void chooseInitialCentroids(ClusterData& d, const bw::Unitset& units) {
+static void chooseInitialCentroids(ClusterData& d, const UnitList& units) {
     // We use a somewhat modified version of the k-means++ choice of initial centroids:
     // instead of randomly choosing a position with probability proportional to the
     // squared distance to the nearest centroid, we deterministically choose the position
@@ -64,16 +68,16 @@ static void chooseInitialCentroids(ClusterData& d, const bw::Unitset& units) {
     }
 }
 
-static void repopulateClusters(ClusterData& d, const bw::Unitset& units) {
-    // First, we clear out our old clusters so we can regenerate them.
+static void repopulateClusters(ClusterData& d, const UnitList& units) {
+    // First, we reinitialize our old clusters (which may be null) with empty sets.
     for (int cluster = 0; cluster < d.clusters.size(); cluster++) {
-        d.clusters[cluster].clear();
+        d.clusters[cluster] = std::make_shared<UnitList>();
     }
 
     // For each unit, put it into the cluster that has the closest centroid.
     for (bw::Unit unit : units) {
         int minCluster = getClosestCentroid(d, unit, (int)d.clusters.size()).first;
-        d.clusters[minCluster].insert(unit);
+        d.clusters[minCluster]->push_back(unit);
     }
 }
 
@@ -83,15 +87,15 @@ static void computeNewCentroids(ClusterData& d) {
     for (int cluster = 0; cluster < d.clusters.size(); cluster++) {
         bw::Position total = bw::Positions::Origin;
 
-        for (bw::Unit unit : d.clusters[cluster]) {
+        for (bw::Unit unit : *d.clusters[cluster]) {
             total += unit->getPosition();
         }
 
-        d.centroids[cluster] = total / (int)d.clusters[cluster].size();
+        d.centroids[cluster] = total / (int)d.clusters[cluster]->size();
     }
 }
 
-GroupList findUnitClusters(int count, const bw::Unitset& units) {
+GroupList findUnitClusters(int count, const UnitList& units) {
     // We could iterate the k-means++ algorithm until we converge to a set of clusters,
     // but that's really unnecessary for our purposes. Instead, iterate a fixed number of
     // times, which gives us a good enough clustering.
@@ -135,8 +139,8 @@ static constexpr int MAX_SELF_CLUSTERS = 5;
 static constexpr int MAX_ENEMY_CLUSTERS = 8;
 
 struct SimulationState {
-    bw::Unitset selfUnits;
-    bw::Unitset enemyUnits;
+    UnitList selfUnits;
+    UnitList enemyUnits;
 
     AttackPairs firstAttacks;
 
@@ -150,7 +154,7 @@ static bool compareStates(SimulationState& left, SimulationState& right) {
     return left.goodness > right.goodness;
 }
 
-static void queueNewState(std::vector<SimulationState>& queue, SimulationState state) {
+static void queueNewState(std::vector<SimulationState>& queue, SimulationState&& state) {
     // We implement the fixed-size priority queue as a min heap. If we've reached the
     // maximum size and the new state is worse than the worst queued state, discard it.
     if (queue.size() >= MAX_QUEUE && state.goodness <= queue.front().goodness) {
@@ -175,7 +179,7 @@ static SimulationState& findBestState(std::vector<SimulationState>& queue) {
     return *std::min_element(queue.begin(), queue.end(), &compareStates);
 }
 
-static int computeDefense(const bw::Unitset& units) {
+static int computeDefense(const UnitList& units) {
     int defense = 0;
     for (bw::Unit unit : units) {
         defense += unit->getHitPoints() + unit->getShields();
@@ -184,7 +188,7 @@ static int computeDefense(const bw::Unitset& units) {
 }
 
 static void simulateCombatGroup(SimulationState& state,
-        bw::Unitset& selfGroup, bw::Unitset& enemyGroup) {
+        UnitList& selfGroup, UnitList& enemyGroup) {
     // For now, we just have a ridiculously simplistic heuristic function that compares
     // the health and shields of the two groups and modifies the goodness accordingly.
     int selfDefense = computeDefense(selfGroup);
@@ -197,7 +201,7 @@ static void simulateCombatEvent(SimulationState& state, AttackPairs& pairing) {
     // Presumably, aside from the pairwise heuristic function, this function should also
     // modify the heuristics of the game. However, we don't have that as yet.
     for (int i = 0; i < pairing.self.size(); i++) {
-        simulateCombatGroup(state, pairing.self[i], pairing.enemy[i]);
+        simulateCombatGroup(state, *pairing.self[i], *pairing.enemy[i]);
     }
 }
 
@@ -230,6 +234,7 @@ static void simulateCombatTurn(std::vector<SimulationState>& queue, SimulationSt
     // onto a targeted enemy group by finding every possible permutation of the initial
     // sequence of enemy groups.
     std::vector<AttackPairs> pairings;
+    pairings.reserve(6720); // TODO
     createCombatPairings(pairings, selfGroups, enemyGroups, 0);
 
     // Now we can simulate each of these attack pairings and add them to the priority
@@ -238,19 +243,19 @@ static void simulateCombatTurn(std::vector<SimulationState>& queue, SimulationSt
     for (AttackPairs& pairing : pairings) {
         SimulationState state = initial;
 
-        simulateCombatEvent(state, pairing);
-        queueNewState(queue, state);
-
         // If the initial state has no attacks, then this is the first turn. Hence, we
         // store the attack list so we can actually follow through with the attack if this
         // particular simulation turns out to be ideal.
         if (state.firstAttacks.self.size() == 0) {
             state.firstAttacks = std::move(pairing);
         }
+
+        simulateCombatEvent(state, pairing);
+        queueNewState(queue, std::move(state));
     }
 }
 
-AttackPairs runCombatSimulation(bw::Unitset selfUnits, bw::Unitset enemyUnits) {
+AttackPairs runCombatSimulation(UnitList selfUnits, UnitList enemyUnits) {
     // The initial state of the simulation just starts out with the list of units that
     // we're provided to begin with.
     SimulationState initial;

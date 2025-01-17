@@ -4,13 +4,17 @@
 
 #include "ShadowUnit.h"
 
+#include <memory>
 #include <vector>
 
-using GroupList = std::vector<bw::Unitset>;
+using UnitList = std::vector<bw::Unit>;
+using GroupList = std::vector<std::shared_ptr<UnitList>>;
+
+UnitList unitListOf(const bw::Unitset& units);
 
 // Takes a set of units and groups them into clusters of units that are close together,
 // using a modified non-stochastic version of the k-means++ algorithm.
-GroupList findUnitClusters(int count, const bw::Unitset& units);
+GroupList findUnitClusters(int count, const UnitList& units);
 
 // Represents a single attack action, indicating who should attack whom.
 struct AttackPairs {
@@ -18,4 +22,4 @@ struct AttackPairs {
     GroupList enemy;
 };
 
-AttackPairs runCombatSimulation(bw::Unitset selfUnits, bw::Unitset enemyUnits);
+AttackPairs runCombatSimulation(UnitList selfUnits, UnitList enemyUnits);
