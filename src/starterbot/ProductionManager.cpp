@@ -14,7 +14,8 @@ bool ProductionManager::addBuildRequest(bw::UnitType type) {
 
     // Get a build location in a reasonable range near the center of the base. If no
     // location could be found, return false.
-    bw::TilePosition pos = g_game->getBuildLocation(type, g_self->getStartLocation(), 32, false);
+    bw::TilePosition pos = g_game->getBuildLocation(
+        type, g_self->getStartLocation(), 32, type.requiresCreep());
     if (!pos.isValid()) {
         return false;
     }
@@ -52,12 +53,32 @@ int ProductionManager::countBuildRequests(bw::UnitType type) {
         (!bw::Filter::IsConstructing && !bw::Filter::IsIdle));
 }
 
+bool ProductionManager::addMorphRequest(bw::UnitType type) {
+    // Reserve a unit that we can use to morph into a unit of the proper type.
+    bw::Unit worker = m_unitManager.reserveUnit(bw::Filter::GetType == type.whatBuilds().first);
+    if (worker == nullptr) {
+        return false;
+    }
+
+    // Tell the unit to morph into another type. If this fails, such as due to
+    // insufficient resources, release the unit and return false.
+    if (!worker->morph(type)) {
+        m_unitManager.releaseUnit(worker);
+        return false;
+    }
+
+    // The morph request succeeded, so add this unit to the set of reserved workers.
+    m_workers.insert(worker);
+    return true;
+}
+
 void ProductionManager::onStart() {
     m_workers.clear();
 }
 
 void ProductionManager::onFrame() {
-    // Release any workers that are idle, i.e. not constructing any buildings.
+    // Release any workers that are idle, i.e. not constructing any buildings or currently
+    // morphing into another unit type.
     m_unitManager.releaseUnits(m_workers, bw::Filter::IsIdle);
 
     // We borrow as many workers as we can that are not already reserved by some manager
