@@ -12,6 +12,10 @@ private:
 
     // The set of units that are reserved as scouts.
     bw::Unitset m_scouts;
+    bool finishSearchEnemyBase;
+    bool maneuverPathAdded;
+    std::list<bw::TilePosition> maneuverPath;
+    bw::TilePosition enemyBasePos;
 
 public:
     ScoutManager(UnitManager& unitManager);
