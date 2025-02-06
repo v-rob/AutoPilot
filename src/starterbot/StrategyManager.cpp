@@ -17,17 +17,39 @@ void StrategyManager::notifyMembers(const bw::Event& event) {
 }
 
 void StrategyManager::onStart() {
-    // For now, we only have one predefined build order, but in the future we can make the
-    // choice of build order take into account the race of our opponent.
-    m_strategy = {
-        {ActionType::TRAIN,  ActionItem::NONE, bw::UnitTypes::Protoss_Probe,        7 }, // 0
-        {ActionType::BUILD,  0,                bw::UnitTypes::Protoss_Pylon,        1 }, // 1
-        {ActionType::SCOUT,  1,                bw::UnitTypes::Protoss_Probe,        1 }, // 2
-        {ActionType::BUILD,  1,                bw::UnitTypes::Protoss_Gateway,      1 }, // 3
-        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Zealot,       2 }, // 4
-        {ActionType::TRAIN,  3,                bw::UnitTypes::Protoss_Probe,        13}, // 5
-        {ActionType::ATTACK, 4,                                                       }, // 6
-    };
+    // For now, we only have one predefined build order per race, but in the future we can
+    // make the choice of build order take into account the race of our opponent.
+    if (g_self->getRace() == bw::Races::Protoss) {
+        m_strategy = {
+            {ActionType::TRAIN,   /* 0 */   -1,  bw::UnitTypes::Protoss_Probe,        7 },
+            {ActionType::BUILD,   /* 1 */   0,   bw::UnitTypes::Protoss_Pylon,        1 },
+            {ActionType::SCOUT,   /* 2 */   1,   bw::UnitTypes::Protoss_Probe,        1 },
+            {ActionType::TRAIN,   /* 3 */   2,   bw::UnitTypes::Protoss_Probe,        13},
+            {ActionType::BUILD,   /* 4 */   2,   bw::UnitTypes::Protoss_Gateway,      1 },
+            {ActionType::TRAIN,   /* 5 */   4,   bw::UnitTypes::Protoss_Zealot,       2 },
+            {ActionType::ATTACK,  /* 6 */   5,                                          },
+        };
+    } else if (g_self->getRace() == bw::Races::Terran) {
+        m_strategy = {
+            {ActionType::TRAIN,   /* 0 */   -1,  bw::UnitTypes::Terran_SCV,           8 },
+            {ActionType::BUILD,   /* 1 */   0,   bw::UnitTypes::Terran_Supply_Depot,  1 },
+            {ActionType::SCOUT,   /* 2 */   1,   bw::UnitTypes::Terran_SCV,           1 },
+            {ActionType::TRAIN,   /* 3 */   2,   bw::UnitTypes::Terran_SCV,           16},
+            {ActionType::BUILD,   /* 4 */   2,   bw::UnitTypes::Terran_Barracks,      1 },
+            {ActionType::TRAIN,   /* 5 */   4,   bw::UnitTypes::Terran_Marine,        2 },
+            {ActionType::ATTACK,  /* 6 */   5,                                          },
+        };
+    } else {
+        m_strategy = {
+            {ActionType::MORPH,   /* 0 */   -1,  bw::UnitTypes::Zerg_Drone,           9 },
+            {ActionType::BUILD,   /* 1 */   0,   bw::UnitTypes::Zerg_Spawning_Pool,   1 },
+            {ActionType::SCOUT,   /* 2 */   1,   bw::UnitTypes::Zerg_Drone,           1 },
+            {ActionType::MORPH,   /* 3 */   1,   bw::UnitTypes::Zerg_Overlord,        2 },
+            {ActionType::MORPH,   /* 4 */   3,   bw::UnitTypes::Zerg_Drone,           13},
+            {ActionType::MORPH,   /* 5 */   1,   bw::UnitTypes::Zerg_Zergling,        2 },
+            {ActionType::ATTACK,  /* 6 */   5,                                          },
+        };
+    }
 
     // Make sure we reset the completion vector to all false values and resize it to be
     // the same size as the strategy vector.
@@ -41,7 +63,7 @@ void StrategyManager::onFrame() {
         const ActionItem& item = m_strategy[i];
 
         // If this item's dependency (if any) hasn't been completed, then do nothing here.
-        if (item.depends != ActionItem::NONE && !m_completion[item.depends]) {
+        if (item.depends != -1 && !m_completion[item.depends]) {
             continue;
         }
 
@@ -74,6 +96,22 @@ void StrategyManager::onFrame() {
 
             // Otherwise, try to train enough units up to the desired quota.
             while (progress < item.count && m_buildingManager.addTrainRequest(item.type)) {
+                progress++;
+            }
+            break;
+        }
+
+        case ActionType::MORPH:
+        {
+            // If the number of fully morphed units meets the quota, then we're done.
+            int current = m_unitManager.selfCount(bw::Filter::GetType == item.type);
+            int progress = m_unitManager.selfCount(
+                bw::Filter::GetType == item.type || bw::Filter::BuildType == item.type);
+
+            m_completion[i] = current >= item.count;
+
+            // Otherwise, try to morph enough units up to the desired quota.
+            while (progress < item.count && m_productionManager.addMorphRequest(item.type)) {
                 progress++;
             }
             break;

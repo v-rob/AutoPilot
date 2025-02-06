@@ -25,6 +25,11 @@ public:
     // to construct the building but no building has been placed yet.
     int countBuildRequests(bw::UnitType type);
 
+    // For Zerg units, requests that the unit morphs into another unit. Buildings still
+    // require a build command rather than a morph command, even though both appear to be
+    // morphing from the user's point of view.
+    bool addMorphRequest(bw::UnitType type);
+
 protected:
     virtual void onStart() override;
     virtual void onFrame() override;

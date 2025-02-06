@@ -13,6 +13,7 @@
 enum class ActionType {
     BUILD,
     TRAIN,
+    MORPH,
     SCOUT,
     ATTACK,
 };
@@ -20,13 +21,11 @@ enum class ActionType {
 // Describes an action that StrategyManager should tell its subordinate classes to do,
 // e.g. training a certain number of worker units, or instructing the bot to attack.
 struct ActionItem {
-    static constexpr int NONE = -1;
-
     // The type of action to be performed.
     ActionType action;
 
     // If a certain ActionItem needs to be completed before this one, this field is set to
-    // the index of that action. Otherwise, it should be set to NONE.
+    // the index of that action. Otherwise, it should be set to -1.
     int depends;
 
     // The type of the unit needed for the action, e.g. specifying what type of building
