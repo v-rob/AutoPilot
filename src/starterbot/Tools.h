@@ -20,6 +20,9 @@ namespace BWAPI::Filter {
     extern const CompareFilter<Unit, Unit, Unit(*)(Unit)> BuildUnit;
 }
 
+// Gets the squared distance between two points instead of the proper distance.
+int getSquaredDistance(bw::Position a, bw::Position b);
+
 // This is the base class for all classes that receive events from BWAPI. It contains
 // virtual methods for each event that is relevant for the bot to respond to, plus a way
 // to dispatch events to subordinate classes that also need to receive events.

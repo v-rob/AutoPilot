@@ -10,6 +10,11 @@ namespace BWAPI::Filter {
     const CompareFilter<Unit, Unit, Unit(*)(Unit)> BuildUnit(&implBuildUnit);
 }
 
+int getSquaredDistance(bw::Position a, bw::Position b) {
+    bw::Position diff = a - b;
+    return diff.x * diff.x + diff.y * diff.y;
+}
+
 void EventReceiver::notifyReceiver(const bw::Event& event) {
     notifyMembers(event);
 
