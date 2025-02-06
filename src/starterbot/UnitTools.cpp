@@ -1,10 +1,5 @@
 #include "UnitTools.h"
 
-static int getSquaredDistance(bw::Position a, bw::Position b) {
-    bw::Position diff = a - b;
-    return diff.x * diff.x + diff.y * diff.y;
-}
-
 struct ClusterDistance {
     Cluster* cluster;
     int distance;

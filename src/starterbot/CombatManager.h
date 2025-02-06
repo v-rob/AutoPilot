@@ -9,6 +9,7 @@ private:
 
     // Indicates whether the bot is currently attacking.
     bool m_attacking;
+    int m_retargetTime;
 
     // The set of all units reserved to be soldiers to attack the enemy.
     bw::Unitset m_soldiers;
@@ -23,5 +24,6 @@ public:
 protected:
     virtual void onStart() override;
     virtual void onFrame() override;
+    virtual void onDraw() override;
     virtual void onUnitDestroy(bw::Unit unit) override;
 };
