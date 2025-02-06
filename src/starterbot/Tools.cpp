@@ -5,6 +5,11 @@ bw::Player g_self = nullptr;
 
 int g_gameCount = 0;
 
+int getSquaredDistance(bw::Position a, bw::Position b) {
+    bw::Position diff = a - b;
+    return diff.x * diff.x + diff.y * diff.y;
+}
+
 void EventReceiver::notifyReceiver(const bw::Event& event) {
     notifyMembers(event);
 
