@@ -2,7 +2,7 @@
 #include <cmath>
 
 ScoutManager::ScoutManager(UnitManager& unitManager) :
-    m_unitManager(unitManager), finishSearchEnemyBase(false),
+    m_unitManager(unitManager), m_vectorField(unitManager), finishSearchEnemyBase(false),
     maneuverPathAdded(false){
 }
 
@@ -20,6 +20,10 @@ bool ScoutManager::addScout(bw::UnitType type) {
 
 int ScoutManager::countScouts(bw::UnitType type) {
     return UnitManager::matchCount(m_scouts, bw::Filter::GetType == type);
+}
+
+void ScoutManager::notifyMembers(const bw::Event& event) {
+    m_vectorField.notifyReceiver(event);
 }
 
 void ScoutManager::onStart() {

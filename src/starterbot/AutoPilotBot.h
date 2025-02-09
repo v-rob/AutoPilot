@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Tools.h"
-#include "VectorField.h"
 #include "StrategyManager.h"
 
 // This class is in charge of handling administrative functions of the bot, such as
@@ -10,7 +9,6 @@
 class AutoPilotBot : public EventReceiver {
 private:
 	StrategyManager m_strategyManager;
-	VectorField m_vectorField;
 
 protected:
 	virtual void notifyMembers(const bw::Event& event) override;
