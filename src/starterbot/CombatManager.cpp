@@ -1,7 +1,5 @@
 #include "CombatManager.h"
 
-#include "UnitTools.h"
-
 CombatManager::CombatManager(UnitManager& unitManager) :
     m_unitManager(unitManager) {
 }
@@ -12,6 +10,8 @@ void CombatManager::attack() {
 
 static double calcBattleHeuristic(const Cluster& soldiers, const Cluster& targets) {
     double goodness = 0.0;
+    int us_army = 0;
+    int enemy_army = 0;
 
     for (bw::Unit soldier : soldiers.units) {
         for (bw::Unit target : targets.units) {
@@ -23,6 +23,82 @@ static double calcBattleHeuristic(const Cluster& soldiers, const Cluster& target
     goodness -= soldiers.centroid.getDistance(targets.centroid);
 
     return goodness;
+}
+
+double CombatManager::pairwise(bw::Unit& attacker, bw::Unit& defender) {
+
+    // Type of weapon being used, could be air or ground
+    bw::WeaponType weapon = NULL;
+
+    // Damage per second, to be evaluated after finding weapon type
+    double dps = 0;
+
+    // Gets either air or ground weapon
+    if (attacker->getType().airWeapon() != NULL) {
+        weapon = attacker->getType().airWeapon();
+
+        // Calculate DPS for air hitting weapon
+        dps = weapon.damageAmount() * weapon.damageFactor() * attacker->getType().maxAirHits()
+            - defender->getType().armor() / weapon.damageCooldown();
+    }
+    else {
+        weapon = attacker->getType().groundWeapon();
+
+        // Calculate DPS for ground hitting weapon
+        dps = weapon.damageAmount() * weapon.damageFactor() * attacker->getType().maxGroundHits()
+            - defender->getType().armor() / weapon.damageCooldown();
+    }
+
+    // if defender is a flyer and attacker cannot target defender (only targets ground)
+    if (defender->getType().isFlyer() && (weapon.targetsGround()))
+    {
+        return 0;
+    }
+
+    // if defender is a ground unit and attacker cannot target defender (only targets air)
+    if (!(defender->getType().isFlyer()) && (weapon.targetsAir())) {
+        return 0;
+    }
+
+    // DMG, damage that can be dealt after x amount of frames (*** TBD ***)
+    double dmg = dps * m_retargetTime;
+
+    // Ending calculation of hitpoints + shields + damage (*** MODIFIER HERE ***)
+    return (defender->getType().maxHitPoints() - defender->getHitPoints()) +
+           (defender->getType().maxShields() - defender->getShields()) + 
+            dmg;
+}
+
+double CombatManager::group(const Cluster& soldiers, const Cluster& targets) {
+    double goodness = 0.0;
+    int us_army = 0;
+    int enemy_army = 0;
+
+
+    // Count our soldiers
+    for (bw::Unit soldier : soldiers.units) {
+        us_army += 1;
+    }
+    // Count enemy targers
+    for (bw::Unit target : targets.units) {
+        enemy_army += 1;
+    }
+
+    for (bw::Unit soldier : soldiers.units) {
+        for (bw::Unit target : targets.units) {
+
+            goodness += pairwise(soldier, target) - pairwise(target, soldier);
+        }
+    }
+
+    // goodness divided by the total units of us + them
+    goodness = goodness / (us_army + enemy_army);
+
+    // ***STILL NEED TO ADD LOG(DISTANCE)***
+    // g-= log( us.distance(them) / avgspeed(us))
+    
+    return goodness;
+
 }
 
 void CombatManager::onStart() {
@@ -64,7 +140,7 @@ void CombatManager::onFrame() {
                 continue;
             }
 
-            double goodness = calcBattleHeuristic(soldiers, enemies);
+            double goodness = group(soldiers, enemies);
 
             if (goodness > bestGoodness) {
                 bestTarget = &enemies;
