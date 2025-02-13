@@ -2,6 +2,7 @@
 
 #include "Tools.h"
 #include "UnitManager.h"
+#include "UnitTools.h"
 
 class CombatManager : public EventReceiver {
 private:
@@ -26,4 +27,8 @@ protected:
     virtual void onFrame() override;
     virtual void onDraw() override;
     virtual void onUnitDestroy(bw::Unit unit) override;
+
+private:
+    double pairwise(bw::Unit& attacker, bw::Unit& defender);
+    double group(const Cluster& soldiers, const Cluster& targets);
 };
