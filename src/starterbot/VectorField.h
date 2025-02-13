@@ -52,5 +52,6 @@ protected:
 
     void draw() const;
     void drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const;
+    void drawBuildTile(bw::TilePosition buildTile, bw::Color color) const;
     void drawWalkVector(bw::WalkPosition walkTile, Vector vector, bw::Color color) const;
 };

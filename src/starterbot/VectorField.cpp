@@ -99,20 +99,21 @@ void VectorField::onFrame() {
 
     m_mouseTiles.clear();
 
-    const int range = 10;
-    for (int x = walkMouse.x - 10 / 2; x <= walkMouse.x + 10 / 2; x++) {
-        for (int y = walkMouse.y - 10 / 2; y <= walkMouse.y + 10 / 2; y++) {
+    const int radius = 8;
+    for (int x = walkMouse.x - radius; x <= walkMouse.x + radius; x++) {
+        for (int y = walkMouse.y - radius; y <= walkMouse.y + radius; y++) {
             bw::WalkPosition walkTile(x, y);
 
             if (!walkTile.isValid()) { continue; }
 
             bw::Position tileCenter = bw::Position(walkTile) + bw::Position{ 4, 4 };
+            float distance = util::distanceBetween(m_mouse, tileCenter);
+
+            if (distance > radius * 8.0f) { continue; }
 
             //drawWalkTile(walkTile, bw::Colors::Orange);
             Vector vec(util::angleBetween(m_mouse, tileCenter));
-            float distance = util::distanceBetween(m_mouse, tileCenter);
-            std::cout << distance / (range * 8.0f) << "\n";
-            vec *= 1 - (distance / (range * 8.0f - 4.0f));
+            vec *= 1.2 - (distance / (radius * 8.0f));
 
             m_groundField.set(x, y, vec);
             m_mouseTiles.push_back(walkTile);
@@ -160,6 +161,7 @@ void VectorField::draw() const {
     bw::TilePosition tileMouse(m_mouse);
 
     drawWalkTile(walkMouse, bw::Colors::Cyan);
+    //drawBuildTile(tileMouse, bw::Colors::Purple);
 
     const char white = '\x04';
 
@@ -177,6 +179,18 @@ void VectorField::drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const
     const int px = walkTile.x * 8 + padding;
     const int py = walkTile.y * 8 + padding;
     const int d = 8 - 2 * padding;
+
+    g_game->drawLineMap(px, py, px + d, py, color);
+    g_game->drawLineMap(px + d, py, px + d, py + d, color);
+    g_game->drawLineMap(px + d, py + d, px, py + d, color);
+    g_game->drawLineMap(px, py + d, px, py, color);
+}
+
+void VectorField::drawBuildTile(bw::TilePosition buildTile, bw::Color color) const {
+    const int padding = 1;
+    const int px = buildTile.x * 32 + padding;
+    const int py = buildTile.y * 32 + padding;
+    const int d = 32 - 2 * padding;
 
     g_game->drawLineMap(px, py, px + d, py, color);
     g_game->drawLineMap(px + d, py, px + d, py + d, color);
