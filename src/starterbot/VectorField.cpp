@@ -20,8 +20,8 @@ double util::boundAngle(double angle) {
     return angle;
 }
 
-double util::angleBetween(const bw::Position& point1, const bw::Position& point2) {
-    const bw::Position direction = point2 - point1;
+double util::angleBetween(const Vector& point1, const Vector& point2) {
+    const Vector direction = point2 - point1;
     return boundAngle(std::atan2(direction.y, direction.x));
 }
 
@@ -34,6 +34,7 @@ float util::distanceBetween(const Vector& point1, const Vector& point2) {
 
 // constructors for Vector
 Vector::Vector(float x_, float y_) : bw::Point<float, 1>(x_, y_) {}
+Vector::Vector(int x_, int y_) : bw::Point<float, 1>(static_cast<float>(x_), static_cast<float>(y_)) {}
 Vector::Vector(const bw::Point<float, 1>& p) : bw::Point<float, 1>(p) {}
 Vector::Vector(const bw::Position& p) : bw::Point<float, 1>(p) {}
 Vector::Vector(double angle) : bw::Point<float, 1>(std::cos(angle), std::sin(angle)) {}
@@ -63,8 +64,9 @@ void VectorField::onStart() {
     m_width = bw::Broodwar->mapWidth() * 4;
     m_height = bw::Broodwar->mapHeight() * 4;
 
-    m_walkable = Grid<bool>(m_width, m_height, true);
+    m_walkable = Grid<char>(m_width, m_height, true);
     m_groundField = Grid<Vector>(m_width, m_height, { 0.0f, 0.0f });
+    m_scoutField = Grid<Vector>(m_width, m_height, { 0.0f, 0.0f });
 
     // Set the boolean grid data from the map
     for (int x(0); x < m_width; ++x) {
@@ -73,14 +75,29 @@ void VectorField::onStart() {
         }
     }
 
+    bool once = false;
     for (auto& resource : g_game->getStaticNeutralUnits()) {
-        const bw::WalkPosition walkTile(resource->getTilePosition());
+        if (once) {
+            break;
+        }
 
-        for (int x = walkTile.x; x < walkTile.x + resource->getType().tileWidth() * 4; x++) {
-            for (int y = walkTile.y; y < walkTile.y + resource->getType().tileHeight() * 4; y++) {
+        const bw::WalkPosition topLeft(resource->getTilePosition());
+        const bw::WalkPosition bottomRight = bw::WalkPosition{
+            topLeft.x + resource->getType().tileWidth() * 4,
+            topLeft.y + resource->getType().tileHeight() * 4
+        };
+
+        for (int x = topLeft.x; x < topLeft.x + resource->getType().tileWidth() * 4; x++) {
+            for (int y = topLeft.y; y < topLeft.y + resource->getType().tileHeight() * 4; y++) {
                 m_walkable.set(x, y, false);
+                //std::cout << "x, y: " << x << ", " << y << "\n";
             }
         }
+
+        //const bw::WalkPosition margin{ 2, 2 };
+        updateVectorRegion(topLeft, bottomRight, 8);
+
+        //once = true;
     }
 }
 
@@ -94,7 +111,7 @@ void VectorField::onFrame() {
 
 
     for (auto& tile : m_mouseTiles) {
-        m_groundField.set(tile.x, tile.y, { 0.0f, 0.0f });
+        m_scoutField.set(tile.x, tile.y, { 0.0f, 0.0f });
     }
 
     m_mouseTiles.clear();
@@ -115,8 +132,63 @@ void VectorField::onFrame() {
             Vector vec(util::angleBetween(m_mouse, tileCenter));
             vec *= 1.2 - (distance / (radius * 8.0f));
 
-            m_groundField.set(x, y, vec);
+            m_scoutField.set(x, y, vec);
             m_mouseTiles.push_back(walkTile);
+        }
+    }
+}
+
+void VectorField::updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition bottomRight, int margin) {
+    const int sx = topLeft.x - margin;
+    const int sy = topLeft.y - margin;
+    const int ex = bottomRight.x + margin;
+    const int ey = bottomRight.y + margin;
+
+    const int mooreRadius = margin;
+
+    for (int x = sx; x < ex; x++) {
+        for (int y = sy; y < ey; y++) {
+            bw::WalkPosition walkTile(x, y);
+
+            if (!bw::WalkPosition{ x, y }.isValid()) { continue; }
+
+            if (!m_walkable.get(x, y)) { continue; }
+
+            Vector centroid{ 0.0f, 0.0f };
+            int filledCount = 0;
+
+            for (int rx = -mooreRadius; rx <= mooreRadius; rx++) {
+                for (int ry = -mooreRadius; ry <= mooreRadius; ry++) {
+                    const int wx = x + rx;
+                    const int wy = y + ry;
+
+                    if (!((bw::WalkPosition{ wx, wy }).isValid())) { 
+                        continue; 
+                    }
+
+                    if (!m_walkable.get(wx, wy)) {
+                        centroid += Vector{ rx, ry };
+                        filledCount++;
+                    }
+                }
+            }
+
+            if (filledCount == 0) {
+                m_groundField.set(x, y, Vector{ 0.0f, 0.0f });
+                continue;
+            }
+
+            bw::Position pos(walkTile);
+            centroid = centroid / filledCount + Vector{ pos };
+
+            double angle = util::angleBetween(centroid, pos);
+            float distance = util::distanceBetween(centroid, pos);
+
+            if (distance > mooreRadius) { continue; }
+
+            Vector vec = Vector{ angle } * (1.3 - (distance / mooreRadius));
+            m_groundField.set(x, y, vec);
+
         }
     }
 }
@@ -148,7 +220,10 @@ void VectorField::draw() const {
             //bw::Color tileColor = m_walkable.get(x, y) ? bw::Colors::Green : bw::Colors::Red;
 
             if (m_walkable.get(x, y)) {
-                Vector vector = m_groundField.get(x, y);
+                Vector ground_vector = m_groundField.get(x, y);
+                Vector scout_vector = m_scoutField.get(x, y);
+                Vector vector = ground_vector + scout_vector;
+
                 drawWalkVector(walkTile, vector, bw::Colors::Green);
             } else {
                 drawWalkTile(walkTile, bw::Colors::Red);
