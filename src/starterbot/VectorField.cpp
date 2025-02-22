@@ -6,6 +6,7 @@
 #include <sstream>
 #include <fstream>
 #include <array>
+#include <algorithm>
 
 /*   BWAPI GRID TYPES
  *   Pixel Level  (1x1 pixel)     bw::Position
@@ -82,9 +83,67 @@ void VectorField::onStart() {
             }
         }
     }
+
+    /* ALIVE BUILDINGS are handled in onFrame.*/
+    std::cout << "Alive Buildings are initially empty, will fill in as needed\n" << "";
 }
 
+
 void VectorField::onFrame() {
+    //The set difference implementation should be called in here (THIS IS CAUSING THE ISSUE)
+    bw::Unitset m_difference;
+    //Unitset doesn't support .start() or .end()
+
+    /*Check Add Building(s)*/
+    for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
+        bool difference = true;
+        for (bw::Unit aliveBuilding : m_aliveBuildings) {
+            if (shadowBuilding != aliveBuilding) {
+                continue;
+            }
+            else {
+                difference = false; //we found shadow in alive
+            }
+        }
+        if (difference == true){
+            m_aliveBuildings.insert(shadowBuilding);
+            m_difference.insert(shadowBuilding); //either add invalid or valid squares
+            drawBuildingTile(shadowBuilding);
+        }
+    }
+
+    /*Check Remove Building(s)*/
+    for (bw::Unit aliveBuilding : m_aliveBuildings) {
+        //std::cout << "" << (aliveBuilding) << "";
+        bool difference = true;
+        for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
+            if (aliveBuilding != shadowBuilding) {
+                continue;
+            }
+            else {
+                difference = false; //we found alive in shadow
+            }
+        }
+        if (difference == true) {
+            m_aliveBuildings.erase(aliveBuilding);
+            m_difference.insert(aliveBuilding);
+            drawFreeBuildingTile(aliveBuilding);
+        }
+    }
+    
+
+    //Whenever a building is added or removed from map, update the following Tile(s)
+    //if (!m_difference.empty()) {
+    //    //std::cout << "Building Difference" << "";
+    //    for (auto& building : m_difference) {
+    //        drawBuildingTile(building);
+    //        //std::cout << "{" << building << "}";
+    //    }
+    //}
+    //e.g. shadowunits = [1,2,3], m_aliveBuildings = [1,2,3] no change from VectorField::onStart
+    // e.g. shadowunits = [1,2,3,4], m_aliveBuildings = [1,2,3] building added
+    /* m_difference = [4] */
+
     if (m_drawField) {
         draw();
     }
@@ -204,4 +263,22 @@ void VectorField::drawWalkVector(bw::WalkPosition walkTile, Vector vector, bw::C
     const bw::Position head = tail + vector * length;
 
     g_game->drawLineMap(tail, head, color);
+}
+
+void VectorField::drawBuildingTile(bw::Unit building) { //add another parameter later
+    const bw::WalkPosition walkTile(building->getTilePosition());
+    for (int x = walkTile.x; x < walkTile.x + building->getType().tileWidth() * 4; x++) {
+        for (int y = walkTile.y; y < walkTile.y + building->getType().tileHeight() * 4; y++) {
+            m_walkable.set(x, y, false);
+        }
+    }
+}
+
+void VectorField::drawFreeBuildingTile(bw::Unit building) {
+    const bw::WalkPosition walkTile(building->getTilePosition());
+    for (int x = walkTile.x; x < walkTile.x + building->getType().tileWidth() * 4; x++) {
+        for (int y = walkTile.y; y < walkTile.y + building->getType().tileHeight() * 4; y++) {
+            m_walkable.set(x, y, true);
+        }
+    }
 }

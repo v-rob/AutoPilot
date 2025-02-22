@@ -30,6 +30,7 @@ namespace util {
 class VectorField : public EventReceiver {
 private:
     UnitManager& m_unitManager;
+    bw::Unitset m_aliveBuildings;
 
     Grid<bool> m_walkable;
     Grid<Vector> m_groundField;
@@ -54,4 +55,6 @@ protected:
     void drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const;
     void drawBuildTile(bw::TilePosition buildTile, bw::Color color) const;
     void drawWalkVector(bw::WalkPosition walkTile, Vector vector, bw::Color color) const;
+    void drawBuildingTile(bw::Unit building);
+    void drawFreeBuildingTile(bw::Unit building);
 };
