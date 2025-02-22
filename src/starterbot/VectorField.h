@@ -8,6 +8,7 @@
 class Vector : public bw::Point<float, 1> {
 public:
     Vector(float x_, float y_);
+    Vector(int x_, int y_);
     Vector(const bw::Point<float, 1>& p);
     Vector(const bw::Position& p);
     Vector(double angle);
@@ -21,7 +22,7 @@ namespace util {
     double boundAngle(double angle);
 
     // returns the angle between two points
-    double angleBetween(const bw::Position& point1, const bw::Position& point2);
+    double angleBetween(const Vector& point1, const Vector& point2);
 
     // returns the distance between two points
     float distanceBetween(const Vector& point1, const Vector& point2);
@@ -32,8 +33,10 @@ private:
     UnitManager& m_unitManager;
     bw::Unitset m_aliveBuildings;
 
-    Grid<bool> m_walkable;
+    Grid<char> m_walkable;      // char is being treated as boolean (C++ hates std::vector<bool>)
     Grid<Vector> m_groundField;
+    Grid<Vector> m_scoutField; 
+
     int m_width = 0;
     int m_height = 0;
     bool m_drawField = true;
@@ -50,6 +53,9 @@ protected:
     virtual void onStart() override;
     virtual void onFrame() override;
     virtual void onSendText(const std::string& text) override;
+
+    // Updates all of the vectors within a specified region
+    void updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition bottomRight, int margin);
 
     void draw() const;
     void drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const;
