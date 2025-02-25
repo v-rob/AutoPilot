@@ -78,13 +78,17 @@ void VectorField::onStart() {
 
     for (bw::TilePosition pos : g_game->getStartLocations()) {
         const bw::WalkPosition center = bw::WalkPosition(pos);
+        const bw::Position v_center(center);
 
         for (int x = center.x - baseWidth / 2; x < center.x + baseWidth / 2; x++) {
             for (int y = center.y - baseWidth / 2; y < center.y + baseWidth / 2; y++) {
                 if (!bw::WalkPosition(x, y).isValid()) { continue; }
 
+                const bw::Position v_tile(bw::WalkPosition(x, y));
+                double angle = util::angleBetween(v_tile, v_center);
+
                 m_walkable.set(x, y, g_game->isWalkable(x, y));
-                m_groundField.set(x, y, Vector(0.0f, 0.0f));
+                m_groundField.set(x, y, Vector(angle));
             }
         }
     }
@@ -366,6 +370,7 @@ void VectorField::drawWalkVector(bw::WalkPosition walkTile, Vector vector, bw::C
     const bw::Position head = tail + vector * length;
 
     g_game->drawLineMap(tail, head, color);
+    g_game->drawCircleMap(head, 1, bw::Colors::Orange, true);
 }
 
 void VectorField::drawBuildingTile(bw::Unit building) { //add another parameter later
