@@ -130,23 +130,23 @@ void VectorField::onFrame() {
     }
 
     /*Check Remove Building(s)*/
-    for (bw::Unit aliveBuilding : m_aliveBuildings) {
-        //std::cout << "" << (aliveBuilding) << "";
-        bool difference = true;
-        for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
-            if (aliveBuilding != shadowBuilding) {
-                continue;
-            }
-            else {
-                difference = false; //we found alive in shadow
-            }
-        }
-        if (difference == true) {
-            m_aliveBuildings.erase(aliveBuilding);
-            m_difference.insert(aliveBuilding);
-            drawFreeBuildingTile(aliveBuilding);
-        }
-    }
+    //for (bw::Unit aliveBuilding : m_aliveBuildings) {
+    //    //std::cout << "" << (aliveBuilding) << "";
+    //    bool difference = true;
+    //    for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
+    //        if (aliveBuilding != shadowBuilding) {
+    //            continue;
+    //        }
+    //        else {
+    //            difference = false; //we found alive in shadow
+    //        }
+    //    }
+    //    if (difference == true) {
+    //        m_aliveBuildings.erase(aliveBuilding);
+    //        m_difference.insert(aliveBuilding);
+    //        drawFreeBuildingTile(aliveBuilding);
+    //    }
+    //}
     
 
     //Whenever a building is added or removed from map, update the following Tile(s)
