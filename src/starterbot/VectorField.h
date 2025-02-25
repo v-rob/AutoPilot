@@ -3,6 +3,7 @@
 #include "Tools.h"
 #include "Grid.h"
 #include "UnitManager.h"
+#include <optional>
 #include <vector>
 
 class Vector : public bw::Point<float, 1> {
@@ -34,8 +35,8 @@ private:
     bw::Unitset m_aliveBuildings;
 
     Grid<char> m_walkable;      // char is being treated as boolean (C++ hates std::vector<bool>)
-    Grid<Vector> m_groundField;
-    Grid<Vector> m_scoutField; 
+    Grid<std::optional<Vector>> m_groundField;
+    Grid<std::optional<Vector>> m_scoutField;
 
     int m_width = 0;
     int m_height = 0;

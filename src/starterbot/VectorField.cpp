@@ -7,6 +7,7 @@
 #include <fstream>
 #include <array>
 #include <algorithm>
+#include <optional>
 
 /*   BWAPI GRID TYPES
  *   Pixel Level  (1x1 pixel)     bw::Position
@@ -66,8 +67,27 @@ void VectorField::onStart() {
     m_height = bw::Broodwar->mapHeight() * 4;
 
     m_walkable = Grid<char>(m_width, m_height, true);
-    m_groundField = Grid<Vector>(m_width, m_height, { 0.0f, 0.0f });
-    m_scoutField = Grid<Vector>(m_width, m_height, { 0.0f, 0.0f });
+    //m_groundField = Grid<Vector>(m_width, m_height, { 0.0f, 0.0f });
+    //m_scoutField = Grid<Vector>(m_width, m_height, { 0.0f, 0.0f });
+
+    m_groundField = Grid<std::optional<Vector>>(m_width, m_height, std::nullopt);
+    m_scoutField = Grid<std::optional<Vector>>(m_width, m_height, Vector(0.0f, 0.0f));
+
+
+    const int baseWidth = 20 * 4; // Assumed max base width in walk tiles
+
+    for (bw::TilePosition pos : g_game->getStartLocations()) {
+        const bw::WalkPosition center = bw::WalkPosition(pos);
+
+        for (int x = center.x - baseWidth / 2; x < center.x + baseWidth / 2; x++) {
+            for (int y = center.y - baseWidth / 2; y < center.y + baseWidth / 2; y++) {
+                if (!bw::WalkPosition(x, y).isValid()) { continue; }
+
+                m_walkable.set(x, y, g_game->isWalkable(x, y));
+                m_groundField.set(x, y, Vector(0.0f, 0.0f));
+            }
+        }
+    }
 
     // Set the boolean grid data from the map
     for (int x(0); x < m_width; ++x) {
@@ -170,7 +190,7 @@ void VectorField::onFrame() {
 
 
     for (auto& tile : m_mouseTiles) {
-        m_scoutField.set(tile.x, tile.y, { 0.0f, 0.0f });
+        m_scoutField.set(tile.x, tile.y, Vector{ 0.0f, 0.0f });
     }
 
     m_mouseTiles.clear();
@@ -279,9 +299,17 @@ void VectorField::draw() const {
             //bw::Color tileColor = m_walkable.get(x, y) ? bw::Colors::Green : bw::Colors::Red;
 
             if (m_walkable.get(x, y)) {
-                Vector ground_vector = m_groundField.get(x, y);
-                Vector scout_vector = m_scoutField.get(x, y);
-                Vector vector = ground_vector + scout_vector;
+                //Vector ground_vector = m_groundField.get(x, y);
+                //Vector scout_vector = m_scoutField.get(x, y);
+                //Vector vector = ground_vector + scout_vector;
+                std::optional<Vector> ground_vector = m_groundField.get(x, y);
+                std::optional<Vector> scout_vector = m_scoutField.get(x, y);
+
+                if (ground_vector == std::nullopt || scout_vector == std::nullopt) {
+                    continue;
+                }
+
+                Vector vector = *ground_vector + *scout_vector;
 
                 drawWalkVector(walkTile, vector, bw::Colors::Green);
             } else {
