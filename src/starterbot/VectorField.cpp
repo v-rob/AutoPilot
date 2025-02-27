@@ -57,21 +57,14 @@ VectorField::VectorField(UnitManager& unitManager) : m_unitManager(unitManager) 
 
 void VectorField::onStart() {
 
-    bw::Position p1(0, 0);
-    bw::Position p2(100, 0);
-
-    std::cout << util::distanceBetween(p1, p2) << "\n";
-
     // width and height in terms of WalkPosition; mapWidth and mapHeight return values in terms of TilePosition
     m_width = bw::Broodwar->mapWidth() * 4;
     m_height = bw::Broodwar->mapHeight() * 4;
 
     m_walkable = Grid<char>(m_width, m_height, true);
-    //m_groundField = Grid<Vector>(m_width, m_height, { 0.0f, 0.0f });
-    //m_scoutField = Grid<Vector>(m_width, m_height, { 0.0f, 0.0f });
 
     m_groundField = Grid<std::optional<Vector>>(m_width, m_height, std::nullopt);
-    m_scoutField = Grid<std::optional<Vector>>(m_width, m_height, Vector(0.0f, 0.0f));
+    m_enemyField  = Grid<std::optional<Vector>>(m_width, m_height, Vector(0.0f, 0.0f));
 
 
     const int baseWidth = 20 * 4; // Assumed max base width in walk tiles
@@ -120,7 +113,7 @@ void VectorField::onStart() {
         }
 
         //const bw::WalkPosition margin{ 2, 2 };
-        updateVectorRegion(topLeft, bottomRight, 8);
+        updateVectorRegion(topLeft, bottomRight, BUILDING_MARGIN);
 
         //once = true;
     }
@@ -151,6 +144,16 @@ void VectorField::onFrame() {
             m_difference.insert(shadowBuilding); //either add invalid or valid squares
             drawBuildingTile(shadowBuilding);
         }
+    }
+
+    for (bw::Unit newBuilding : m_difference) {
+        const bw::WalkPosition topLeft(newBuilding->getTilePosition());
+        const bw::WalkPosition bottomRight = bw::WalkPosition{
+            topLeft.x + newBuilding->getType().tileWidth() * 4,
+            topLeft.y + newBuilding->getType().tileHeight() * 4
+        };
+
+        updateVectorRegion(topLeft, bottomRight, BUILDING_MARGIN);
     }
 
     /*Check Remove Building(s)*/
@@ -194,7 +197,7 @@ void VectorField::onFrame() {
 
 
     for (auto& tile : m_mouseTiles) {
-        m_scoutField.set(tile.x, tile.y, Vector{ 0.0f, 0.0f });
+        m_enemyField.set(tile.x, tile.y, Vector(0.0f, 0.0f));
     }
 
     m_mouseTiles.clear();
@@ -215,7 +218,7 @@ void VectorField::onFrame() {
             Vector vec(util::angleBetween(m_mouse, tileCenter));
             vec *= 1.2 - (distance / (radius * 8.0f));
 
-            m_scoutField.set(x, y, vec);
+            m_enemyField.set(x, y, vec);
             m_mouseTiles.push_back(walkTile);
         }
     }
@@ -276,6 +279,18 @@ void VectorField::updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition 
     }
 }
 
+std::optional<Vector> VectorField::getVectorSum(int x, int y) const {
+    std::optional<Vector> ground_vector = m_groundField.get(x, y);
+    std::optional<Vector> enemy_vector = m_enemyField.get(x, y);
+
+    if (ground_vector == std::nullopt || enemy_vector == std::nullopt) {
+        return std::nullopt;
+    }
+
+    Vector vector = *ground_vector + *enemy_vector;
+    return vector;
+}
+
 void VectorField::onSendText(const std::string& text) {
     if (text == "/pause") {
         g_game->pauseGame();
@@ -303,19 +318,20 @@ void VectorField::draw() const {
             //bw::Color tileColor = m_walkable.get(x, y) ? bw::Colors::Green : bw::Colors::Red;
 
             if (m_walkable.get(x, y)) {
-                //Vector ground_vector = m_groundField.get(x, y);
-                //Vector scout_vector = m_scoutField.get(x, y);
-                //Vector vector = ground_vector + scout_vector;
                 std::optional<Vector> ground_vector = m_groundField.get(x, y);
-                std::optional<Vector> scout_vector = m_scoutField.get(x, y);
+                std::optional<Vector> enemy_vector = m_enemyField.get(x, y);
 
-                if (ground_vector == std::nullopt || scout_vector == std::nullopt) {
+                //if (ground_vector == std::nullopt || enemy_vector == std::nullopt) {
+                //    continue;
+                //}
+
+                std::optional<Vector> vector = getVectorSum(x, y);
+
+                if (vector == std::nullopt) {
                     continue;
                 }
 
-                Vector vector = *ground_vector + *scout_vector;
-
-                drawWalkVector(walkTile, vector, bw::Colors::Green);
+                drawWalkVector(walkTile, *vector, bw::Colors::Green);
             } else {
                 drawWalkTile(walkTile, bw::Colors::Red);
             }
