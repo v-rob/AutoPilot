@@ -1,7 +1,7 @@
 #include "AutoPilotBot.h"
 
 // Chooses the frame time in milliseconds that the game should be run at.
-constexpr int LOCAL_SPEED = 10;
+constexpr int LOCAL_SPEED = 7;
 
 void AutoPilotBot::notifyMembers(const bw::Event& event) {
     m_strategyManager.notifyReceiver(event);

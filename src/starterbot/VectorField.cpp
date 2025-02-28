@@ -57,6 +57,8 @@ VectorField::VectorField(UnitManager& unitManager) : m_unitManager(unitManager) 
 
 void VectorField::onStart() {
 
+    m_aliveBuildings.clear();
+
     // width and height in terms of WalkPosition; mapWidth and mapHeight return values in terms of TilePosition
     m_width = bw::Broodwar->mapWidth() * 4;
     m_height = bw::Broodwar->mapHeight() * 4;
@@ -157,24 +159,26 @@ void VectorField::onFrame() {
     }
 
     /*Check Remove Building(s)*/
-    //for (bw::Unit aliveBuilding : m_aliveBuildings) {
-    //    //std::cout << "" << (aliveBuilding) << "";
-    //    bool difference = true;
-    //    for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
-    //        if (aliveBuilding != shadowBuilding) {
-    //            continue;
-    //        }
-    //        else {
-    //            difference = false; //we found alive in shadow
-    //        }
-    //    }
-    //    if (difference == true) {
-    //        m_aliveBuildings.erase(aliveBuilding);
-    //        m_difference.insert(aliveBuilding);
-    //        drawFreeBuildingTile(aliveBuilding);
-    //    }
-    //}
+    for (bw::Unit aliveBuilding : m_aliveBuildings) {
+        //std::cout << "" << (aliveBuilding) << "";
+        bool difference = true;
+        for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
+            if (aliveBuilding != shadowBuilding) {
+                continue;
+            }
+            else {
+                difference = false; //we found alive in shadow
+            }
+        }
+        if (difference == true) {
+            m_aliveBuildings.erase(aliveBuilding);
+            m_difference.insert(aliveBuilding);
+            drawFreeBuildingTile(aliveBuilding);
+        }
+    }
     
+
+    m_difference.clear();
 
     //Whenever a building is added or removed from map, update the following Tile(s)
     //if (!m_difference.empty()) {

@@ -36,7 +36,10 @@ void ScoutManager::onFrame() {
     // unexplored potential start location in order to find the enemy's location. They
     // will not patrol the area any further after doing so.
     for (bw::Unit scout : m_scouts) {
-        if (finishSearchEnemyBase) {
+        if (finishSearchEnemyBase == true) { // we will use the vectors for maneuvering
+        //    for (VectorField vector : ) {
+        //        scout->move(vector);
+        //    }
             break;
         }
         // If the scout is currently moving towards some target location, let them move.
