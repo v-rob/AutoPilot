@@ -8,12 +8,19 @@
 // so we make some convenience using's and global variables.
 namespace bw {
     using namespace BWAPI;
+    using namespace BWAPI::Filter;
 }
 
 extern bw::GameWrapper& g_game;
 extern bw::Player g_self;
 
 extern int g_gameCount;
+
+// BWAPI does not have a filter for the UnitInterface::getBuildUnit() method. This method
+// is useful for the bot, so we implement our own polyfill for it.
+namespace BWAPI::Filter {
+    extern const CompareFilter<Unit, Unit, Unit(*)(Unit)> BuildUnit;
+}
 
 // This is the base class for all classes that receive events from BWAPI. It contains
 // virtual methods for each event that is relevant for the bot to respond to, plus a way

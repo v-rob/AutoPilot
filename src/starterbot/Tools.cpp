@@ -5,6 +5,13 @@ bw::Player g_self = nullptr;
 
 int g_gameCount = 0;
 
+namespace BWAPI::Filter {
+    static Unit implBuildUnit(Unit u) {
+        return u->getBuildUnit();
+    }
+    const CompareFilter<Unit, Unit, Unit(*)(Unit)> BuildUnit(&implBuildUnit);
+}
+
 void EventReceiver::notifyReceiver(const bw::Event& event) {
     notifyMembers(event);
 
