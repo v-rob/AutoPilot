@@ -30,4 +30,6 @@ $(BIN_DIR)/%.cpp.o: %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -r $(BIN_DIR)/src $(BIN_DIR)/$(TARGET_EXEC)
+	git clean -fdx .
+	git restore .
+	rm -rf $(BIN_DIR)/src $(BIN_DIR)/$(TARGET_EXEC)
