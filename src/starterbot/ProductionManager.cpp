@@ -166,15 +166,19 @@ void ProductionManager::onFrame() {
     // finished morphing into another unit type.
     m_unitManager.releaseUnits(m_trainers, !bw::IsTraining && !bw::IsMorphing);
 
+
+    // Count how many refineries we have to determine the number of workers needed
+    // to collect gas. In this case we need 2 per refinery.
+    int gasCount = m_unitManager.borrowCount(bw::Filter::IsRefinery) * 2;
+
     // Check to see if refinery exists
-    for (bw::Unit unit : m_unitManager.borrowUnits(bw::Filter::IsRefinery)) {
-        if (m_gas_gatherers.size() < 2) {
-            m_gas_gatherers = m_unitManager.reserveUnits(bw::Filter::IsWorker, 2);
-        }
+    if (m_gasGatherers.size() < gasCount) {
+        bw::Unitset newGatherers = m_unitManager.reserveUnits(bw::Filter::IsWorker, 2 - m_gasGatherers.size());
+        m_gasGatherers.insert(newGatherers.begin(), newGatherers.end());
     }
 
     // If a unit in already gathering gas, leave it be
-    for (bw::Unit unit : m_gas_gatherers) {
+    for (bw::Unit unit : m_gasGatherers) {
         if (unit->isGatheringGas()) {
             continue;
         }

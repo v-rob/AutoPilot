@@ -19,7 +19,7 @@ private:
     // units that are morphing into a non-building type.
     bw::Unitset m_trainers;
 
-    bw::Unitset m_gas_gatherers;
+    bw::Unitset m_gasGatherers;
 
 public:
     ProductionManager(UnitManager& unitManager);
