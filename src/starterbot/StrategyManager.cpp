@@ -27,7 +27,10 @@ void StrategyManager::onFrame() {
 void StrategyManager::onProtossFrame() {
     // First, we make sure none of our buildings are idle by training new units.
     m_productionManager.idleTrainRequests(bw::UnitTypes::Protoss_Probe, false);
-    m_productionManager.idleTrainRequests(bw::UnitTypes::Protoss_Zealot, false);
+    m_productionManager.groupTrainRequests({
+        {bw::UnitTypes::Protoss_Zealot,  0.60},
+        {bw::UnitTypes::Protoss_Dragoon, 0.40},
+    }, false);
 
     // Make sure we have enough pylons to support the number of units we have. Since
     // Protoss units are relatively slow to make, we don't need to keep as much slack in
@@ -35,12 +38,13 @@ void StrategyManager::onProtossFrame() {
     m_productionManager.targetBuildRequests(
         bw::UnitTypes::Protoss_Pylon, g_self->supplyUsed() / 14);
 
-    int workerCount = m_unitManager.selfCount(bw::GetType == bw::UnitTypes::Protoss_Probe);
-    int fighterCount = m_unitManager.selfCount(bw::GetType == bw::UnitTypes::Protoss_Zealot);
+    int workerCount  = m_unitManager.selfCount(bw::GetType == bw::UnitTypes::Protoss_Probe);
+    int zealotCount  = m_unitManager.selfCount(bw::GetType == bw::UnitTypes::Protoss_Zealot);
+    int dragoonCount = m_unitManager.selfCount(bw::GetType == bw::UnitTypes::Protoss_Dragoon);
 
     // If we have enough workers with which to gather resources, we can send one of them
     // out to go do some scouting.
-    if (workerCount >= 8 && m_scoutManager.countScouts(bw::UnitTypes::Protoss_Probe) == 0) {
+    if (workerCount >= 9 && m_scoutManager.countScouts(bw::UnitTypes::Protoss_Probe) == 0) {
         m_scoutManager.addScout(bw::UnitTypes::Protoss_Probe);
     }
 
@@ -49,7 +53,17 @@ void StrategyManager::onProtossFrame() {
     // currently have so we don't run into bottlenecks in army production.
     if (workerCount >= 11) {
         m_productionManager.targetBuildRequests(
-            bw::UnitTypes::Protoss_Gateway, fighterCount / 5 + 1);
+            bw::UnitTypes::Protoss_Gateway, (zealotCount + dragoonCount) / 5 + 1);
+    }
+
+    // Once we've built a few zealots, we should start expanding to get more powerful
+    // units. So, build an assimilator to start collecting gas, and then a cybernetics
+    // core for dragoon support.
+    if (zealotCount > 2) {
+        m_productionManager.targetBuildRequests(bw::UnitTypes::Protoss_Assimilator, 1);
+    }
+    if (zealotCount > 3) {
+        m_productionManager.targetBuildRequests(bw::UnitTypes::Protoss_Cybernetics_Core, 1);
     }
 }
 
@@ -66,7 +80,7 @@ void StrategyManager::onTerranFrame() {
     int workerCount = m_unitManager.selfCount(bw::GetType == bw::UnitTypes::Terran_SCV);
     int fighterCount = m_unitManager.selfCount(bw::GetType == bw::UnitTypes::Terran_Marine);
 
-    if (workerCount >= 7 && m_scoutManager.countScouts(bw::UnitTypes::Terran_SCV) == 0) {
+    if (workerCount >= 8 && m_scoutManager.countScouts(bw::UnitTypes::Terran_SCV) == 0) {
         m_scoutManager.addScout(bw::UnitTypes::Terran_SCV);
     }
 
