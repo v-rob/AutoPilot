@@ -166,49 +166,40 @@ void ProductionManager::onFrame() {
     // finished morphing into another unit type.
     m_unitManager.releaseUnits(m_trainers, !bw::IsTraining && !bw::IsMorphing);
 
+    // We base the number of workers who are assigned to gas collection using a proportion
+    // of the total number of workers. We subtract the number of current workers currently
+    // gathering gas in order to get the number of workers who need to be assigned.
+    int workerCount = m_unitManager.borrowCount(bw::IsWorker);
+    int targetGasWorkers = workerCount / 17 -
+        m_unitManager.borrowCount(bw::IsWorker && bw::IsGatheringGas);
 
-    // Count how many refineries we have to determine the number of workers needed
-    // to collect gas. In this case we need 2 per refinery.
-    int gasCount = m_unitManager.borrowCount(bw::Filter::IsRefinery) * 2;
+    // Borrow as many workers as possible that aren't reserved by any manager and send
+    // them to collect resources if they aren't already doing so.
+    bw::Unitset idleWorkers = m_unitManager.borrowUnits(
+        bw::IsWorker && !bw::IsGatheringMinerals && !bw::IsGatheringGas);
 
-    // Check to see if refinery exists
-    if (m_gasGatherers.size() < gasCount) {
-        bw::Unitset newGatherers = m_unitManager.reserveUnits(bw::Filter::IsWorker, 2 - m_gasGatherers.size());
-        m_gasGatherers.insert(newGatherers.begin(), newGatherers.end());
-    }
+    for (bw::Unit unit : idleWorkers) {
+        bw::Unit resource = nullptr;
 
-    // If a unit in already gathering gas, leave it be
-    for (bw::Unit unit : m_gasGatherers) {
-        if (unit->isGatheringGas()) {
-            continue;
+        // If we want gas gatherers, find the nearest refinery and decrement the target
+        // number. We want to get the refinery that is closest to the base rather than
+        // closest to the worker since the worker may be far away from the base.
+        if (targetGasWorkers > 0) {
+            resource = g_game->getClosestUnit(
+                bw::Position(g_self->getStartLocation()), bw::IsRefinery);
+            targetGasWorkers--;
         }
 
-        // Get the closest refinery to the starting location
-        bw::Unit refinery = g_game->getClosestUnit(
-            bw::Position(g_self->getStartLocation()), bw::Filter::IsRefinery);
-
-        // Check if the refinery is null, if not, gather gas
-        if (refinery != nullptr) {
-            unit->gather(refinery);
-        }
-    }
-
-    // We borrow as many workers as we can that are not already reserved by some manager
-    // and instruct them to gather resources.
-    for (bw::Unit unit : m_unitManager.borrowUnits(bw::IsWorker)) {
-        // If the unit is already gathering minerals, leave them be.
-        if (unit->isGatheringMinerals()) {
-            continue;
+        // If we don't need any more gas gatherers or there are no refineries available,
+        // find the nearest mineral instead. The same distance calculation applies.
+        if (resource == nullptr) {
+            resource = g_game->getClosestUnit(
+                bw::Position(g_self->getStartLocation()), bw::IsMineralField);
         }
 
-        // We want to get the mineral that is closest to the base rather than closest to
-        // the worker since the worker may be a long distance away from the base.
-        bw::Unit mineral = g_game->getClosestUnit(
-            bw::Position(g_self->getStartLocation()), bw::IsMineralField);
-
-        // If a suitable mineral was found, instruct the worker to gather it.
-        if (mineral != nullptr) {
-            unit->gather(mineral);
+        // If a suitable resource was found, instruct the worker to gather it.
+        if (resource != nullptr) {
+            unit->gather(resource);
         }
     }
 }
