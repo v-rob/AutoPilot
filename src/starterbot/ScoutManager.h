@@ -18,6 +18,10 @@ private:
     bool maneuverPathAdded;
     std::list<bw::TilePosition> maneuverPath;
     bw::TilePosition enemyBasePos;
+    bool reachedPointOne;
+    bool reachedPointTwo;
+    bool reachedPointMiddle;
+    bool goingRight;
 
 public:
     ScoutManager(UnitManager& unitManager);
