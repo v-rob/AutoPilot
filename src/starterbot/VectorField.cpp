@@ -22,8 +22,9 @@ double util::boundAngle(double angle) {
     return angle;
 }
 
-double util::angleBetween(const Vector2& point1, const Vector2& point2) {
-    const Vector2 direction = point2 - point1;
+template <typename T>
+double util::angleBetween(const T& point1, const T& point2) {
+    const T direction = point2 - point1;
     return boundAngle(std::atan2(direction.y, direction.x));
 }
 
@@ -33,35 +34,13 @@ float util::distanceBetween(const Vector2& point1, const Vector2& point2) {
     return std::sqrt(dx * dx + dy * dy);
 }
 
-std::pair<bw::Position, bw::Position> util::circleIntersection(const Vector2& c1, const Vector2& c2, int r1, int r2) {
-    // https://stackoverflow.com/a/14146166/27539798
-
-    //Point P0(x, y);
-    //Point c2(c.x, c.y);
-    float d, a, h;
-    //d = c1.distance(c2);
-    d = util::distanceBetween(c1, c2);
-    a = (r2 * r2 - r1 * r1 + d * d) / (2 * d);
-    h = sqrt(r2 * r2 - a * a);
-    //Point c3 = c2.sub(c1).scale(a / d).add(c1);
-    bw::Position c3 = (c2 - c1) * (a / d) + c1;
-    float x3, y3, x4, y4;
-    x3 = c3.x + h * (c2.y - c1.y) / d;
-    y3 = c3.y - h * (c2.x - c1.x) / d;
-    x4 = c3.x - h * (c2.y - c1.y) / d;
-    y4 = c3.y + h * (c2.x - c1.x) / d;
-
-    return std::pair<bw::Position, bw::Position>(bw::Position(x3, y3), bw::Position(x4, y4));
-}
-
-// returns the convex hull of a set of points
 std::vector<bw::Position> util::convexHull(std::vector<bw::Position> points) {
+    // https://www.geeksforgeeks.org/convex-hull-using-jarvis-algorithm-or-wrapping/
 
-    // To find orientation of ordered triplet (p, q, r).
-    // The function returns following values
-    // 0 --> p, q and r are collinear
-    // 1 --> Clockwise
-    // 2 --> Counterclockwise
+    // To find orientation of ordered triplet (p, q, r)
+    // 0 -> p, q and r are collinear
+    // 1 -> Clockwise
+    // 2 -> Counterclockwise
     auto orientation = [](bw::Position p, bw::Position q, bw::Position r) {
         int val = (q.y - p.y) * (r.x - q.x) -
             (q.x - p.x) * (r.y - q.y);
@@ -72,13 +51,10 @@ std::vector<bw::Position> util::convexHull(std::vector<bw::Position> points) {
 
     int n = points.size();
 
-    // There must be at least 3 points
-    if (n < 3) return;
+    if (n < 3) return {};
 
-    // Initialize Result
     std::vector<bw::Position> hull;
 
-    // Find the leftmost point
     int l = 0;
     for (int i = 1; i < n; i++) {
         if (points[i].x < points[l].x) {
@@ -86,41 +62,58 @@ std::vector<bw::Position> util::convexHull(std::vector<bw::Position> points) {
         }
     }
 
-    // Start from leftmost point, keep moving counterclockwise
-    // until reach the start point again.  This loop runs O(h)
-    // times where h is number of points in result or output.
     int p = l, q;
     do {
-        // Add current point to result
         hull.push_back(points[p]);
 
-        // Search for a point 'q' such that orientation(p, q,
-        // x) is counterclockwise for all points 'x'. The idea
-        // is to keep track of last visited most counterclock-
-        // wise point in q. If any point 'i' is more counterclock-
-        // wise than q, then update q.
         q = (p + 1) % n;
         for (int i = 0; i < n; i++) {
-            // If i is more counterclockwise than current q, then
-            // update q
-            if (orientation(points[p], points[i], points[q]) == 2)
+            if (orientation(points[p], points[i], points[q]) == 2) {
                 q = i;
+            }
         }
 
-        // Now q is the most counterclockwise with respect to p
-        // Set p as q for next iteration, so that q is added to
-        // result 'hull'
         p = q;
 
-    } while (p != l);  // While we don't come to first point
+    } while (p != l);
 
     return hull;
+}
+
+bw::Position util::closestPointOnSegment(bw::Position point, std::pair<bw::Position, bw::Position> segment) {
+    // https://stackoverflow.com/a/6853926/27539798
+
+    float A = point.x - segment.first.x;
+    float B = point.y - segment.first.y;
+    float C = segment.second.x - segment.first.x;
+    float D = segment.second.y - segment.first.y;
+
+    float dot = A * C + B * D;
+    float len_sq = C * C + D * D;
+    float param = -1;
+
+    if (len_sq != 0) { //in case of 0 length line
+        param = dot / len_sq;
+    }
+
+    bw::Position closest;
+
+    if (param < 0) {
+        closest = segment.first;
+    } else if (param > 1) {
+        closest = segment.second;
+    } else {
+        closest = segment.first + bw::Position(param * C, param * D);
+    }
+
+    return closest;
 }
 
 
 // constructors for Vector2
 Vector2::Vector2(float x_, float y_) : bw::Point<float, 1>(x_, y_) {}
 Vector2::Vector2(int x_, int y_) : bw::Point<float, 1>(static_cast<float>(x_), static_cast<float>(y_)) {}
+Vector2::Vector2(double x_, double y_) : bw::Point<float, 1>(static_cast<float>(x_), static_cast<float>(y_)) {}
 Vector2::Vector2(const bw::Point<float, 1>& p) : bw::Point<float, 1>(p) {}
 Vector2::Vector2(const bw::Position& p) : bw::Point<float, 1>(p) {}
 Vector2::Vector2(double angle) : bw::Point<float, 1>(std::cos(angle), std::sin(angle)) {}
@@ -130,9 +123,15 @@ float Vector2::length() {
     return util::distanceBetween({ 0.0f, 0.0f }, { x, y });
 }
 
-void Vector2::normalize() {
-    if (length() == 0) { return; }
+Vector2 Vector2::normalize() {
+    if (length() == 0) { return *this; }
     *this = *this / length();
+    return *this;
+}
+
+Vector2 Vector2::rotate(double angle) {
+    *this = Vector2(std::cos(angle), std::sin(angle)) * x + Vector2(-std::sin(angle), std::cos(angle)) * y;
+    return *this;
 }
 
 
@@ -142,8 +141,8 @@ VectorField::VectorField(UnitManager& unitManager) : m_unitManager(unitManager) 
 void VectorField::onStart() {
 
     // width and height in terms of WalkPosition; mapWidth and mapHeight return values in terms of TilePosition
-    m_width = bw::Broodwar->mapWidth() * 4;
-    m_height = bw::Broodwar->mapHeight() * 4;
+    m_width = bw::Broodwar->mapWidth() * WALKPOS_PER_TILEPOS;
+    m_height = bw::Broodwar->mapHeight() * WALKPOS_PER_TILEPOS;
 
     m_walkable = Grid<char>(m_width, m_height, true);
 
@@ -151,7 +150,7 @@ void VectorField::onStart() {
     m_enemyField  = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
 
 
-    const int baseWidth = 20 * 4; // Assumed max base width in walk tiles
+    const int baseWidth = 100; // Assumed max base width in walk tiles
 
     for (bw::TilePosition pos : g_game->getStartLocations()) {
         const bw::WalkPosition center = bw::WalkPosition(pos);
@@ -177,29 +176,20 @@ void VectorField::onStart() {
         }
     }
 
-    bool once = false;
     for (auto& resource : g_game->getStaticNeutralUnits()) {
-        if (once) {
-            break;
-        }
-
         const bw::WalkPosition topLeft(resource->getTilePosition());
         const bw::WalkPosition bottomRight = bw::WalkPosition{
-            topLeft.x + resource->getType().tileWidth() * 4,
-            topLeft.y + resource->getType().tileHeight() * 4
+            topLeft.x + resource->getType().tileWidth() * WALKPOS_PER_TILEPOS,
+            topLeft.y + resource->getType().tileHeight() * WALKPOS_PER_TILEPOS
         };
 
-        for (int x = topLeft.x; x < topLeft.x + resource->getType().tileWidth() * 4; x++) {
-            for (int y = topLeft.y; y < topLeft.y + resource->getType().tileHeight() * 4; y++) {
+        for (int x = topLeft.x; x < topLeft.x + resource->getType().tileWidth() * WALKPOS_PER_TILEPOS; x++) {
+            for (int y = topLeft.y; y < topLeft.y + resource->getType().tileHeight() * WALKPOS_PER_TILEPOS; y++) {
                 m_walkable.set(x, y, false);
-                //std::cout << "x, y: " << x << ", " << y << "\n";
             }
         }
 
-        //const bw::WalkPosition margin{ 2, 2 };
         updateVectorRegion(topLeft, bottomRight, BUILDING_MARGIN);
-
-        //once = true;
     }
 
     /* ALIVE BUILDINGS are handled in onFrame.*/
@@ -357,7 +347,7 @@ void VectorField::updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition 
             bw::Position pos(walkTile);
             centroid = centroid / filledCount + Vector2{ pos };
 
-            double angle = util::angleBetween(centroid, pos);
+            double angle = util::angleBetween<bw::Position>(centroid, pos);
             float distance = util::distanceBetween(centroid, pos);
 
             if (distance > mooreRadius) { continue; }
@@ -372,66 +362,30 @@ void VectorField::updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition 
 void VectorField::generatePath() {
     m_path.clear();
 
-    std::vector<bw::WalkPosition> intersections;
-
-    for (auto& building1 : m_aliveBuildings) {
-        if (building1->getPlayer() == g_self || building1->getType().isNeutral()) {
+    std::vector<bw::Position> points;
+    for (auto& building : m_aliveBuildings) {
+        if (building->getPlayer() == g_self ||          // ignore our own buildings
+            building->getType().isNeutral() ||          // ignore resources
+            building->getType().isSpecialBuilding())    // ignore power generators and other pre-existing buildings
+        {
             continue;
         }
 
-        for (auto& building2 : m_aliveBuildings) {
-            if (building2->getPlayer() == g_self || building2->getType().isNeutral()) {
-                continue;
-            }
-
-            //const int radius = m_scoutType.sightRange();
-            const int radius = m_scoutType.sightRange() / 2;
-            const float distance = util::distanceBetween(building1->getPosition(), building2->getPosition());
-            if (distance > radius * 2 || distance <= 0) {
-                continue;
-            }
-            std::cout << "distance: " << distance << "\n";
-
-            auto points = util::circleIntersection(building1->getPosition(), building2->getPosition(), radius, radius);
-
-            std::cout << points.first << ", " << points.second << "\n";
-
-            bw::WalkPosition p1(points.first);
-            bw::WalkPosition p2(points.second);
-
-            if (p1.isValid() && p2.isValid()) {
-                std::cout << "valid\n";
-                intersections.push_back(bw::WalkPosition(p1));
-                intersections.push_back(bw::WalkPosition(p2));
-            }
-        }
+        points.push_back(building->getPosition());
     }
 
-    if (intersections.size() == 0) {
-        return;
+    std::vector<bw::Position> hull = util::convexHull(points);
+    int radius = m_scoutType.sightRange() / 2;
+
+    for (int i = 0; i < hull.size(); i++) {
+        bw::Position current = hull.at(i);
+        bw::Position next = hull.at((i + 1) % hull.size());
+
+        Vector2 direction = next - current;
+        Vector2 perpendicular = direction.normalize().rotate(-M_PI / 2) * radius;
+        m_path.push_back(bw::WalkPosition(current + perpendicular));
+        m_path.push_back(bw::WalkPosition(next + perpendicular));
     }
-
-    m_path.push_back(intersections.at(0));
-    intersections.erase(intersections.begin());
-
-    while (intersections.size() != 0) {
-        bw::WalkPosition closest;
-        float minDistance = 10000.0f;
-
-        for (auto& point : intersections) {
-            float distance = util::distanceBetween(bw::Position(m_path.back()), bw::Position(point));
-            if (distance < minDistance) {
-                minDistance = distance;
-                closest = point;
-            }
-        }
-
-        m_path.push_back(closest);
-        intersections.erase(std::remove(intersections.begin(), intersections.end(), closest), intersections.end());
-    }
-
-    //auto points = util::circleIntersection({ 0, 0 }, { 0, 100 }, 80, 80);
-    //std::cout << points.first << ", " << points.second << "\n";
 }
 
 std::optional<Vector2> VectorField::getVectorSum(int x, int y) const {
@@ -487,7 +441,7 @@ void VectorField::draw() const {
     }
 
     for (auto& building : m_aliveBuildings) {
-        if (building->getPlayer() == g_self || building->getType().isNeutral()) {
+        if (building->getPlayer() == g_self || building->getType().isNeutral() || building->getType().isSpecialBuilding()) {
             continue;
         }
 
