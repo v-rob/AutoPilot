@@ -6,6 +6,10 @@
 #include <optional>
 #include <vector>
 
+// TODO: The current implementation of VectorField assumes only one enemy base, so the path
+// generation falters once they expand. m_enemyBuildings should eventually be partioned into
+// different sets (one for each base) and there should be a seperate path around each
+
 
 class Vector2 : public bw::Point<float, 1> {
 public:
@@ -80,9 +84,11 @@ private:
     // char is being treated as boolean (C++ hates std::vector<bool>)
     Grid<char> m_walkable;
 
+    // width and height of the map in walk tiles
     int m_width = 0;
     int m_height = 0;
-    bool m_drawField = true;
+
+    bool m_drawField = false;
 
     // The chosen unit type for scouting (will eventually be dyanmic based on race / strategy)
     const bw::UnitType m_scoutType = bw::UnitTypes::Protoss_Scout;

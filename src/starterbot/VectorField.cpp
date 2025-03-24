@@ -119,7 +119,6 @@ Vector2::Vector2(const bw::Position& p) : bw::Point<float, 1>(p) {}
 Vector2::Vector2(double angle) : bw::Point<float, 1>(std::cos(angle), std::sin(angle)) {}
 
 float Vector2::length() {
-    //return std::sqrt(x * x + y * y);
     return util::distanceBetween({ 0.0f, 0.0f }, { x, y });
 }
 
@@ -152,7 +151,7 @@ void VectorField::onStart() {
     m_groundField = Grid<std::optional<Vector2>>(m_width, m_height, std::nullopt);
     m_enemyField  = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
 
-
+    // Initialize the vectors around each potential starting location
     for (bw::TilePosition pos : g_game->getStartLocations()) {
         const bw::WalkPosition center = bw::WalkPosition(pos);
         const bw::Position v_center(center);
@@ -181,9 +180,6 @@ void VectorField::onStart() {
         updateWalkable(resource, false);
         updateGroundField(resource, BUILDING_MARGIN);
     }
-
-    /* ALIVE BUILDINGS are handled in onFrame.*/
-    std::cout << "Alive Buildings are initially empty, will fill in as needed\n" << "";
 
     generatePath();
 }
@@ -219,12 +215,14 @@ void VectorField::onFrame() {
     // If at least one building has been created or destroyed, regenerate the path
     if (difference) {
         generatePath();
+        updatePathField();
     }
 
     // Reset the field for enemy troops
     // TODO: instead of reinstantializing grid, use setAll (weird behavior with std::nullopt)
     m_enemyField = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
 
+    // Point vectors away from each mobile enemy troop on the enemy field "layer"
     for (auto& troop : m_unitManager.shadowUnits(bw::Filter::CanMove && bw::Filter::IsEnemy)) {
         updateEnemyField(bw::WalkPosition(troop->getPosition()));
     }
@@ -245,9 +243,12 @@ void VectorField::generatePath() {
         points.push_back(building->getPosition());
     }
 
+    // get the convex hull (i.e. outermost points) of all enemy buildings
     std::vector<bw::Position> hull = util::convexHull(points);
     int radius = m_scoutType.sightRange() / 2;
 
+    // find the tangent lines between each sucessive circle in the hull
+    // TODO: find the arcs between each tangent
     for (int i = 0; i < hull.size(); i++) {
         bw::Position current = hull.at(i);
         bw::Position next = hull.at((i + 1) % hull.size());
@@ -259,10 +260,10 @@ void VectorField::generatePath() {
     }
 }
 
-void VectorField::updatePathField() {
+// TODO: use util::closestPointOnSegment to orient vectors towards path
+void VectorField::updatePathField() {}
 
-}
-
+// TODO: refactor to extract common functionality between updateGroundField and updateEnemyField
 void VectorField::updateGroundField(bw::Unit unit, int margin) {
     const bw::WalkPosition position(unit->getTilePosition());
 
@@ -315,7 +316,6 @@ void VectorField::updateGroundField(bw::Unit unit, int margin) {
 
             Vector2 vec = Vector2{ angle } * (1.3 - (distance / mooreRadius));
             m_groundField.set(x, y, vec);
-
         }
     }
 }
@@ -367,7 +367,7 @@ void VectorField::onSendText(const std::string& text) {
         g_game->pauseGame();
     }
 
-    if (text == "/field") {
+    if (text == "/drawField") {
         m_drawField = !m_drawField;
     }
 };
