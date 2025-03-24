@@ -140,7 +140,7 @@ VectorField::VectorField(UnitManager& unitManager) : m_unitManager(unitManager) 
 
 void VectorField::onStart() {
 
-    m_aliveBuildings.clear();
+    m_enemyBuildings.clear();
 
     // width and height in terms of WalkPosition; mapWidth and mapHeight return values in terms of TilePosition
     m_width = bw::Broodwar->mapWidth() * WALKPOS_PER_TILEPOS;
@@ -148,25 +148,24 @@ void VectorField::onStart() {
 
     m_walkable = Grid<char>(m_width, m_height, true);
 
+    m_pathField   = Grid<std::optional<Vector2>>(m_width, m_height, std::nullopt);
     m_groundField = Grid<std::optional<Vector2>>(m_width, m_height, std::nullopt);
     m_enemyField  = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
 
-
-    const int baseWidth = 100; // Assumed max base width in walk tiles
 
     for (bw::TilePosition pos : g_game->getStartLocations()) {
         const bw::WalkPosition center = bw::WalkPosition(pos);
         const bw::Position v_center(center);
 
-        for (int x = center.x - baseWidth / 2; x < center.x + baseWidth / 2; x++) {
-            for (int y = center.y - baseWidth / 2; y < center.y + baseWidth / 2; y++) {
+        for (int x = center.x - BASE_WIDTH / 2; x < center.x + BASE_WIDTH / 2; x++) {
+            for (int y = center.y - BASE_WIDTH / 2; y < center.y + BASE_WIDTH / 2; y++) {
                 if (!bw::WalkPosition(x, y).isValid()) { continue; }
 
                 const bw::Position v_tile(bw::WalkPosition(x, y));
                 double angle = util::angleBetween(v_tile, v_center);
 
-                m_walkable.set(x, y, g_game->isWalkable(x, y));
-                m_groundField.set(x, y, Vector2(angle));
+                //m_groundField.set(x, y, Vector2(angle));
+                m_groundField.set(x, y, Vector2(0, 0));
             }
         }
     }
@@ -179,19 +178,8 @@ void VectorField::onStart() {
     }
 
     for (auto& resource : g_game->getStaticNeutralUnits()) {
-        const bw::WalkPosition topLeft(resource->getTilePosition());
-        const bw::WalkPosition bottomRight = bw::WalkPosition{
-            topLeft.x + resource->getType().tileWidth() * WALKPOS_PER_TILEPOS,
-            topLeft.y + resource->getType().tileHeight() * WALKPOS_PER_TILEPOS
-        };
-
-        for (int x = topLeft.x; x < topLeft.x + resource->getType().tileWidth() * WALKPOS_PER_TILEPOS; x++) {
-            for (int y = topLeft.y; y < topLeft.y + resource->getType().tileHeight() * WALKPOS_PER_TILEPOS; y++) {
-                m_walkable.set(x, y, false);
-            }
-        }
-
-        updateVectorRegion(topLeft, bottomRight, BUILDING_MARGIN);
+        updateWalkable(resource, false);
+        updateGroundField(resource, BUILDING_MARGIN);
     }
 
     /* ALIVE BUILDINGS are handled in onFrame.*/
@@ -202,117 +190,86 @@ void VectorField::onStart() {
 
 
 void VectorField::onFrame() {
-    //The set difference implementation should be called in here (THIS IS CAUSING THE ISSUE)
-    bw::Unitset m_difference;
-    //Unitset doesn't support .start() or .end()
 
-    /*Check Add Building(s)*/
-    for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
-        bool difference = true;
-        for (bw::Unit aliveBuilding : m_aliveBuildings) {
-            if (shadowBuilding != aliveBuilding) {
-                continue;
-            }
-            else {
-                difference = false; //we found shadow in alive
-            }
-        }
-        if (difference == true){
-            m_aliveBuildings.insert(shadowBuilding);
-            m_difference.insert(shadowBuilding); //either add invalid or valid squares
-            drawBuildingTile(shadowBuilding);
+    bw::Unitset enemyShadowBuildings = m_unitManager.shadowUnits(
+        bw::Filter::IsBuilding && bw::Filter::IsEnemy &&            // get all enemy buildings
+        !bw::Filter::IsSpecialBuilding && !bw::Filter::IsNeutral    // ignore resources and pre-exisiting buildings
+    );
+    bool difference = false;
+
+    // Check for new buildings
+    for (bw::Unit building : enemyShadowBuildings) {
+        if (m_enemyBuildings.find(building) == m_enemyBuildings.end()) {
+            m_enemyBuildings.insert(building);
+            updateWalkable(building, false);
+            updateGroundField(building, BUILDING_MARGIN);
+            difference = true;
         }
     }
 
-    for (bw::Unit newBuilding : m_difference) {
-        const bw::WalkPosition topLeft(newBuilding->getTilePosition());
-        const bw::WalkPosition bottomRight = bw::WalkPosition{
-            topLeft.x + newBuilding->getType().tileWidth() * 4,
-            topLeft.y + newBuilding->getType().tileHeight() * 4
-        };
-
-        updateVectorRegion(topLeft, bottomRight, BUILDING_MARGIN);
+    // Check for destroyed buildings
+    for (bw::Unit building : m_enemyBuildings) {
+        if (enemyShadowBuildings.find(building) == m_enemyBuildings.end()) {
+            m_enemyBuildings.erase(building);
+            updateWalkable(building, false);
+            difference = true;
+        }
     }
 
-    if (m_difference.size() != 0) {
+    // If at least one building has been created or destroyed, regenerate the path
+    if (difference) {
         generatePath();
     }
 
-    /*Check Remove Building(s)*/
-    for (bw::Unit aliveBuilding : m_aliveBuildings) {
-        //std::cout << "" << (aliveBuilding) << "";
-        bool difference = true;
-        for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
-            if (aliveBuilding != shadowBuilding) {
-                continue;
-            }
-            else {
-                difference = false; //we found alive in shadow
-            }
-        }
-        if (difference == true) {
-            m_aliveBuildings.erase(aliveBuilding);
-            m_difference.insert(aliveBuilding);
-            drawFreeBuildingTile(aliveBuilding);
-        }
+    // Reset the field for enemy troops
+    // TODO: instead of reinstantializing grid, use setAll (weird behavior with std::nullopt)
+    m_enemyField = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
+
+    for (auto& troop : m_unitManager.shadowUnits(bw::Filter::CanMove && bw::Filter::IsEnemy)) {
+        updateEnemyField(bw::WalkPosition(troop->getPosition()));
     }
-    
 
-    m_difference.clear();
-
-    //Whenever a building is added or removed from map, update the following Tile(s)
-    //if (!m_difference.empty()) {
-    //    //std::cout << "Building Difference" << "";
-    //    for (auto& building : m_difference) {
-    //        drawBuildingTile(building);
-    //        //std::cout << "{" << building << "}";
-    //    }
-    //}
-    //e.g. shadowunits = [1,2,3], m_aliveBuildings = [1,2,3] no change from VectorField::onStart
-    // e.g. shadowunits = [1,2,3,4], m_aliveBuildings = [1,2,3] building added
-    /* m_difference = [4] */
+    m_mouse = g_game->getMousePosition() + g_game->getScreenPosition();
+    updateEnemyField(bw::WalkPosition(m_mouse));
 
     if (m_drawField) {
         draw();
     }
+}
 
-    m_mouse = g_game->getMousePosition() + g_game->getScreenPosition();
-    bw::WalkPosition walkMouse(m_mouse);
+void VectorField::generatePath() {
+    m_path.clear();
 
-
-    for (auto& tile : m_mouseTiles) {
-        m_enemyField.set(tile.x, tile.y, Vector2(0.0f, 0.0f));
+    std::vector<bw::Position> points;
+    for (auto& building : m_enemyBuildings) {
+        points.push_back(building->getPosition());
     }
 
-    m_mouseTiles.clear();
+    std::vector<bw::Position> hull = util::convexHull(points);
+    int radius = m_scoutType.sightRange() / 2;
 
-    const int radius = 8;
-    for (int x = walkMouse.x - radius; x <= walkMouse.x + radius; x++) {
-        for (int y = walkMouse.y - radius; y <= walkMouse.y + radius; y++) {
-            bw::WalkPosition walkTile(x, y);
+    for (int i = 0; i < hull.size(); i++) {
+        bw::Position current = hull.at(i);
+        bw::Position next = hull.at((i + 1) % hull.size());
 
-            if (!walkTile.isValid()) { continue; }
-
-            bw::Position tileCenter = bw::Position(walkTile) + bw::Position{ 4, 4 };
-            float distance = util::distanceBetween(m_mouse, tileCenter);
-
-            if (distance > radius * 8.0f) { continue; }
-
-            //drawWalkTile(walkTile, bw::Colors::Orange);
-            Vector2 vec(util::angleBetween(m_mouse, tileCenter));
-            vec *= 1.2 - (distance / (radius * 8.0f));
-
-            m_enemyField.set(x, y, vec);
-            m_mouseTiles.push_back(walkTile);
-        }
+        Vector2 direction = next - current;
+        Vector2 perpendicular = direction.normalize().rotate(-M_PI / 2) * radius;
+        m_path.push_back(bw::WalkPosition(current + perpendicular));
+        m_path.push_back(bw::WalkPosition(next + perpendicular));
     }
 }
 
-void VectorField::updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition bottomRight, int margin) {
-    const int sx = topLeft.x - margin;
-    const int sy = topLeft.y - margin;
-    const int ex = bottomRight.x + margin;
-    const int ey = bottomRight.y + margin;
+void VectorField::updatePathField() {
+
+}
+
+void VectorField::updateGroundField(bw::Unit unit, int margin) {
+    const bw::WalkPosition position(unit->getTilePosition());
+
+    const int sx = position.x - margin;
+    const int sy = position.y - margin;
+    const int ex = position.x + unit->getType().tileWidth() * WALKPOS_PER_TILEPOS + margin;
+    const int ey = position.y + unit->getType().tileHeight() * WALKPOS_PER_TILEPOS + margin;
 
     const int mooreRadius = margin;
 
@@ -363,32 +320,33 @@ void VectorField::updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition 
     }
 }
 
-void VectorField::generatePath() {
-    m_path.clear();
+void VectorField::updateEnemyField(bw::WalkPosition position) {
+    const int radius = 8;
+    for (int x = position.x - radius; x <= position.x + radius; x++) {
+        for (int y = position.y - radius; y <= position.y + radius; y++) {
+            bw::WalkPosition walkTile(x, y);
 
-    std::vector<bw::Position> points;
-    for (auto& building : m_aliveBuildings) {
-        if (building->getPlayer() == g_self ||          // ignore our own buildings
-            building->getType().isNeutral() ||          // ignore resources
-            building->getType().isSpecialBuilding())    // ignore power generators and other pre-existing buildings
-        {
-            continue;
+            if (!walkTile.isValid()) { continue; }
+
+            bw::Position tileCenter = bw::Position(walkTile) + bw::Position{ 4, 4 };
+            float distance = util::distanceBetween(m_mouse, tileCenter);
+
+            if (distance > radius * 8.0f) { continue; }
+
+            Vector2 vec(util::angleBetween(m_mouse, tileCenter));
+            vec *= 1.2 - (distance / (radius * 8.0f));
+
+            m_enemyField.set(x, y, vec);
         }
-
-        points.push_back(building->getPosition());
     }
+}
 
-    std::vector<bw::Position> hull = util::convexHull(points);
-    int radius = m_scoutType.sightRange() / 2;
-
-    for (int i = 0; i < hull.size(); i++) {
-        bw::Position current = hull.at(i);
-        bw::Position next = hull.at((i + 1) % hull.size());
-
-        Vector2 direction = next - current;
-        Vector2 perpendicular = direction.normalize().rotate(-M_PI / 2) * radius;
-        m_path.push_back(bw::WalkPosition(current + perpendicular));
-        m_path.push_back(bw::WalkPosition(next + perpendicular));
+void VectorField::updateWalkable(bw::Unit unit, bool value) {
+    const bw::WalkPosition walkTile(unit->getTilePosition());
+    for (int x = walkTile.x; x < walkTile.x + unit->getType().tileWidth() * WALKPOS_PER_TILEPOS; x++) {
+        for (int y = walkTile.y; y < walkTile.y + unit->getType().tileHeight() * WALKPOS_PER_TILEPOS; y++) {
+            m_walkable.set(x, y, value);
+        }
     }
 }
 
@@ -444,11 +402,7 @@ void VectorField::draw() const {
         }
     }
 
-    for (auto& building : m_aliveBuildings) {
-        if (building->getPlayer() == g_self || building->getType().isNeutral() || building->getType().isSpecialBuilding()) {
-            continue;
-        }
-
+    for (auto& building : m_enemyBuildings) {
         g_game->drawCircleMap(building->getPosition(), m_scoutType.sightRange() / 2, bw::Colors::Cyan);
     }
 
@@ -518,23 +472,5 @@ void VectorField::drawPolyLine(std::vector<bw::WalkPosition> polyLine, bw::Color
         const bw::Position start(polyLine.at(i));
         const bw::Position end(polyLine.at(i + 1));
         g_game->drawLineMap(start, end, bw::Colors::Red);
-    }
-}
-
-void VectorField::drawBuildingTile(bw::Unit building) { //add another parameter later
-    const bw::WalkPosition walkTile(building->getTilePosition());
-    for (int x = walkTile.x; x < walkTile.x + building->getType().tileWidth() * 4; x++) {
-        for (int y = walkTile.y; y < walkTile.y + building->getType().tileHeight() * 4; y++) {
-            m_walkable.set(x, y, false);
-        }
-    }
-}
-
-void VectorField::drawFreeBuildingTile(bw::Unit building) {
-    const bw::WalkPosition walkTile(building->getTilePosition());
-    for (int x = walkTile.x; x < walkTile.x + building->getType().tileWidth() * 4; x++) {
-        for (int y = walkTile.y; y < walkTile.y + building->getType().tileHeight() * 4; y++) {
-            m_walkable.set(x, y, true);
-        }
     }
 }

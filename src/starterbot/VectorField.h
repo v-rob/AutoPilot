@@ -38,7 +38,7 @@ namespace util {
     // Returns the distance between two points
     float distanceBetween(const Vector2& point1, const Vector2& point2);
 
-    // Returns the convex hull of a set of points. 
+    // Returns the convex hull of a set of points
     // The returned hull starts with the left-most point and the following ones are in clockwise order
     std::vector<bw::Position> convexHull(std::vector<bw::Position> points);
 
@@ -51,12 +51,24 @@ private:
     // scale factor for WalkPosition -> TilePosition (32 / 8 = 4)
     const int WALKPOS_PER_TILEPOS = bw::TILEPOSITION_SCALE / bw::WALKPOSITION_SCALE;
 
-    UnitManager& m_unitManager;
-    bw::Unitset m_aliveBuildings;
+    // Assumed max base width in walk tiles
+    const int BASE_WIDTH = 100;
 
-    // true (walkable) or false (not walkable) for every walk tile
-    // char is being treated as boolean (C++ hates std::vector<bool>)
-    Grid<char> m_walkable;
+    // The radius (in walk tiles) of surrounding vectors to update for buildings
+    const int BUILDING_MARGIN = 8;
+
+    UnitManager& m_unitManager;
+    bw::Unitset m_enemyBuildings;
+
+    // Maps known base locations -> players. This should eventually move to a higher class
+    // since it will be helpful to StrategyManager
+    //std::unordered_map<bw::TilePosition, bw::Player> m_baseLocations;
+
+    // A polyline defining the arc around an enemy base that surrounding vectors will point towards
+    std::vector<bw::WalkPosition> m_path;
+
+    // Field of vectors pointing towards m_path
+    Grid<std::optional<Vector2>> m_pathField;
 
     // Field of vectors pointing away from ground terrain / buildings
     Grid<std::optional<Vector2>> m_groundField;  
@@ -64,11 +76,9 @@ private:
     // Field of vectors pointing away from enemies
     Grid<std::optional<Vector2>> m_enemyField;
 
-    // The radius (in walk tiles) of surrounding vectors to update for buildings
-    const int BUILDING_MARGIN = 8;
-
-    // A polyline defining the arc around an enemy base that surrounding vectors will point towards
-    std::vector<bw::WalkPosition> m_path;
+    // true (walkable) or false (not walkable) for every walk tile
+    // char is being treated as boolean (C++ hates std::vector<bool>)
+    Grid<char> m_walkable;
 
     int m_width = 0;
     int m_height = 0;
@@ -78,7 +88,6 @@ private:
     const bw::UnitType m_scoutType = bw::UnitTypes::Protoss_Scout;
 
     bw::Position m_mouse;
-    std::vector<bw::WalkPosition> m_mouseTiles;
 
 public:
     VectorField(UnitManager& unitManager);
@@ -88,11 +97,20 @@ protected:
     virtual void onFrame() override;
     virtual void onSendText(const std::string& text) override;
 
-    // Updates all of the vectors within a specified region
-    void updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition bottomRight, int margin);
-
     // Updates m_path based on the positions of enemy buildings
     void generatePath();
+
+    // Updates the vectors in m_pathField to point towards m_path
+    void updatePathField();
+
+    // Updates the vectors in m_groundField to point away from a building/resource
+    void updateGroundField(bw::Unit unit, int margin);
+
+    // Updates the vectors in m_enemyField to point away from a given enemy troop's position
+    void updateEnemyField(bw::WalkPosition position);
+
+    // Update the walkable values under a given building/resource
+    void updateWalkable(bw::Unit unit, bool value);
 
     // Returns sum of vectors at a specific point
     std::optional<Vector2> getVectorSum(int x, int y) const;
@@ -102,7 +120,4 @@ protected:
     void drawBuildTile(bw::TilePosition buildTile, bw::Color color) const;
     void drawWalkVector(bw::WalkPosition walkTile, Vector2 vector, bw::Color color) const;
     void drawPolyLine(std::vector<bw::WalkPosition> polyLine, bw::Color color) const;
-
-    void drawBuildingTile(bw::Unit building);
-    void drawFreeBuildingTile(bw::Unit building);
 };

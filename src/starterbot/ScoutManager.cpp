@@ -59,7 +59,6 @@ void ScoutManager::onFrame() {
             if (reachedPointOne) {
                 scout->move(bw::Position(middlePos));
                 if (std::abs(scout->getTilePosition().x - middlePos.x) <= 1 && std::abs(scout->getTilePosition().y - middlePos.y) <= 1) {
-                    std::cout << "Point Middle Reached!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" << "";
                     goingRight = true;
                     reachedPointOne = false;
                     reachedPointTwo = false;
@@ -68,13 +67,10 @@ void ScoutManager::onFrame() {
             }
 
             if (reachedPointMiddle){
-                std::cout << "[" << secondPos.x << "," << secondPos.y << "]" << " SecondPos\n";  // this is correct for TilePosition
-                std::cout << "[" << scout->getTilePosition().x << "," << scout->getTilePosition().y << "]" << "CurrentScout\n"; //current scout is a problem, lk tiles instead of TilePosition
                 if (goingRight) {
                     scout->move(bw::Position(secondPos)); //move() takes in a Position, not TilePosition
                     if (std::abs(scout->getTilePosition().x - secondPos.x) <= 1 && std::abs(scout->getTilePosition().y - secondPos.y) <= 1) {
                         //scout has just reached to the secondPos location
-                        std::cout << "Point Two Reached!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" << "";
                         reachedPointOne = false;
                         reachedPointTwo = true;
                         reachedPointMiddle = false; 
@@ -84,7 +80,6 @@ void ScoutManager::onFrame() {
                     scout->move(bw::Position(firstPos));// takes in a Position, not TilePosition
                     if (std::abs(scout->getTilePosition().x - firstPos.x) <= 1 && std::abs(scout->getTilePosition().y - firstPos.y) <= 1) {
                         //scout has just reached to the secondPos location
-                        std::cout << "Point One Reached!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" << "";
                         reachedPointOne = true;
                         reachedPointTwo = false;
                         reachedPointMiddle = false;
@@ -93,11 +88,8 @@ void ScoutManager::onFrame() {
             }
             if (reachedPointTwo) {
                 scout->move(bw::Position(middlePos));
-                std::cout << "[" << firstPos.x << "," << firstPos.y << "]" << "firstPos\n"; //This is correct TilePosition
-                std::cout << "[" << scout->getTilePosition().x << "," << scout->getTilePosition().y << "]" << "current scout to pos one\n"; //current scout
                 if (std::abs(scout->getTilePosition().x - middlePos.x) <= 1 && std::abs(scout->getTilePosition().y - middlePos.y) <= 1) {
                     //scout has just reached to the secondPos location
-                    std::cout << "Point middle reached!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" << "";
                     reachedPointOne = false;
                     reachedPointTwo = false;
                     reachedPointMiddle = true;
