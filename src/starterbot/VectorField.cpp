@@ -22,33 +22,115 @@ double util::boundAngle(double angle) {
     return angle;
 }
 
-double util::angleBetween(const Vector& point1, const Vector& point2) {
-    const Vector direction = point2 - point1;
+template <typename T>
+double util::angleBetween(const T& point1, const T& point2) {
+    const T direction = point2 - point1;
     return boundAngle(std::atan2(direction.y, direction.x));
 }
 
-float util::distanceBetween(const Vector& point1, const Vector& point2) {
+float util::distanceBetween(const Vector2& point1, const Vector2& point2) {
     float dx = static_cast<float>(point2.x - point1.x);
     float dy = static_cast<float>(point2.y - point1.y);
     return std::sqrt(dx * dx + dy * dy);
 }
 
+std::vector<bw::Position> util::convexHull(std::vector<bw::Position> points) {
+    // https://www.geeksforgeeks.org/convex-hull-using-jarvis-algorithm-or-wrapping/
 
-// constructors for Vector
-Vector::Vector(float x_, float y_) : bw::Point<float, 1>(x_, y_) {}
-Vector::Vector(int x_, int y_) : bw::Point<float, 1>(static_cast<float>(x_), static_cast<float>(y_)) {}
-Vector::Vector(const bw::Point<float, 1>& p) : bw::Point<float, 1>(p) {}
-Vector::Vector(const bw::Position& p) : bw::Point<float, 1>(p) {}
-Vector::Vector(double angle) : bw::Point<float, 1>(std::cos(angle), std::sin(angle)) {}
+    // To find orientation of ordered triplet (p, q, r)
+    // 0 -> p, q and r are collinear
+    // 1 -> Clockwise
+    // 2 -> Counterclockwise
+    auto orientation = [](bw::Position p, bw::Position q, bw::Position r) {
+        int val = (q.y - p.y) * (r.x - q.x) -
+            (q.x - p.x) * (r.y - q.y);
 
-float Vector::length() {
-    //return std::sqrt(x * x + y * y);
+        if (val == 0) { return 0; } // collinear
+        return (val > 0) ? 1 : 2;   // clock or counterclock wise
+    };
+
+    int n = points.size();
+
+    if (n < 3) return {};
+
+    std::vector<bw::Position> hull;
+
+    int l = 0;
+    for (int i = 1; i < n; i++) {
+        if (points[i].x < points[l].x) {
+            l = i;
+        }
+    }
+
+    int p = l, q;
+    do {
+        hull.push_back(points[p]);
+
+        q = (p + 1) % n;
+        for (int i = 0; i < n; i++) {
+            if (orientation(points[p], points[i], points[q]) == 2) {
+                q = i;
+            }
+        }
+
+        p = q;
+
+    } while (p != l);
+
+    return hull;
+}
+
+bw::Position util::closestPointOnSegment(bw::Position point, std::pair<bw::Position, bw::Position> segment) {
+    // https://stackoverflow.com/a/6853926/27539798
+
+    float A = point.x - segment.first.x;
+    float B = point.y - segment.first.y;
+    float C = segment.second.x - segment.first.x;
+    float D = segment.second.y - segment.first.y;
+
+    float dot = A * C + B * D;
+    float len_sq = C * C + D * D;
+    float param = -1;
+
+    if (len_sq != 0) { //in case of 0 length line
+        param = dot / len_sq;
+    }
+
+    bw::Position closest;
+
+    if (param < 0) {
+        closest = segment.first;
+    } else if (param > 1) {
+        closest = segment.second;
+    } else {
+        closest = segment.first + bw::Position(param * C, param * D);
+    }
+
+    return closest;
+}
+
+
+// constructors for Vector2
+Vector2::Vector2(float x_, float y_) : bw::Point<float, 1>(x_, y_) {}
+Vector2::Vector2(int x_, int y_) : bw::Point<float, 1>(static_cast<float>(x_), static_cast<float>(y_)) {}
+Vector2::Vector2(double x_, double y_) : bw::Point<float, 1>(static_cast<float>(x_), static_cast<float>(y_)) {}
+Vector2::Vector2(const bw::Point<float, 1>& p) : bw::Point<float, 1>(p) {}
+Vector2::Vector2(const bw::Position& p) : bw::Point<float, 1>(p) {}
+Vector2::Vector2(double angle) : bw::Point<float, 1>(std::cos(angle), std::sin(angle)) {}
+
+float Vector2::length() {
     return util::distanceBetween({ 0.0f, 0.0f }, { x, y });
 }
 
-void Vector::normalize() {
-    if (length() == 0) { return; }
+Vector2 Vector2::normalize() {
+    if (length() == 0) { return *this; }
     *this = *this / length();
+    return *this;
+}
+
+Vector2 Vector2::rotate(double angle) {
+    *this = Vector2(std::cos(angle), std::sin(angle)) * x + Vector2(-std::sin(angle), std::cos(angle)) * y;
+    return *this;
 }
 
 
@@ -57,33 +139,32 @@ VectorField::VectorField(UnitManager& unitManager) : m_unitManager(unitManager) 
 
 void VectorField::onStart() {
 
-    m_aliveBuildings.clear();
+    m_enemyBuildings.clear();
 
     // width and height in terms of WalkPosition; mapWidth and mapHeight return values in terms of TilePosition
-    m_width = bw::Broodwar->mapWidth() * 4;
-    m_height = bw::Broodwar->mapHeight() * 4;
+    m_width = bw::Broodwar->mapWidth() * WALKPOS_PER_TILEPOS;
+    m_height = bw::Broodwar->mapHeight() * WALKPOS_PER_TILEPOS;
 
     m_walkable = Grid<char>(m_width, m_height, true);
 
-    m_groundField = Grid<std::optional<Vector>>(m_width, m_height, std::nullopt);
-    m_enemyField  = Grid<std::optional<Vector>>(m_width, m_height, Vector(0.0f, 0.0f));
+    m_pathField   = Grid<std::optional<Vector2>>(m_width, m_height, std::nullopt);
+    m_groundField = Grid<std::optional<Vector2>>(m_width, m_height, std::nullopt);
+    m_enemyField  = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
 
-
-    const int baseWidth = 20 * 4; // Assumed max base width in walk tiles
-
+    // Initialize the vectors around each potential starting location
     for (bw::TilePosition pos : g_game->getStartLocations()) {
         const bw::WalkPosition center = bw::WalkPosition(pos);
         const bw::Position v_center(center);
 
-        for (int x = center.x - baseWidth / 2; x < center.x + baseWidth / 2; x++) {
-            for (int y = center.y - baseWidth / 2; y < center.y + baseWidth / 2; y++) {
+        for (int x = center.x - BASE_WIDTH / 2; x < center.x + BASE_WIDTH / 2; x++) {
+            for (int y = center.y - BASE_WIDTH / 2; y < center.y + BASE_WIDTH / 2; y++) {
                 if (!bw::WalkPosition(x, y).isValid()) { continue; }
 
                 const bw::Position v_tile(bw::WalkPosition(x, y));
                 double angle = util::angleBetween(v_tile, v_center);
 
-                m_walkable.set(x, y, g_game->isWalkable(x, y));
-                m_groundField.set(x, y, Vector(angle));
+                //m_groundField.set(x, y, Vector2(angle));
+                m_groundField.set(x, y, Vector2(0, 0));
             }
         }
     }
@@ -95,144 +176,101 @@ void VectorField::onStart() {
         }
     }
 
-    bool once = false;
     for (auto& resource : g_game->getStaticNeutralUnits()) {
-        if (once) {
-            break;
-        }
-
-        const bw::WalkPosition topLeft(resource->getTilePosition());
-        const bw::WalkPosition bottomRight = bw::WalkPosition{
-            topLeft.x + resource->getType().tileWidth() * 4,
-            topLeft.y + resource->getType().tileHeight() * 4
-        };
-
-        for (int x = topLeft.x; x < topLeft.x + resource->getType().tileWidth() * 4; x++) {
-            for (int y = topLeft.y; y < topLeft.y + resource->getType().tileHeight() * 4; y++) {
-                m_walkable.set(x, y, false);
-                //std::cout << "x, y: " << x << ", " << y << "\n";
-            }
-        }
-
-        //const bw::WalkPosition margin{ 2, 2 };
-        updateVectorRegion(topLeft, bottomRight, BUILDING_MARGIN);
-
-        //once = true;
+        updateWalkable(resource, false);
+        updateGroundField(resource, BUILDING_MARGIN);
     }
 
-    /* ALIVE BUILDINGS are handled in onFrame.*/
-    std::cout << "Alive Buildings are initially empty, will fill in as needed\n" << "";
+    generatePath();
 }
 
 
 void VectorField::onFrame() {
-    //The set difference implementation should be called in here (THIS IS CAUSING THE ISSUE)
-    bw::Unitset m_difference;
-    //Unitset doesn't support .start() or .end()
 
-    /*Check Add Building(s)*/
-    for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
-        bool difference = true;
-        for (bw::Unit aliveBuilding : m_aliveBuildings) {
-            if (shadowBuilding != aliveBuilding) {
-                continue;
-            }
-            else {
-                difference = false; //we found shadow in alive
-            }
-        }
-        if (difference == true){
-            m_aliveBuildings.insert(shadowBuilding);
-            m_difference.insert(shadowBuilding); //either add invalid or valid squares
-            drawBuildingTile(shadowBuilding);
+    bw::Unitset enemyShadowBuildings = m_unitManager.shadowUnits(
+        bw::Filter::IsBuilding && bw::Filter::IsEnemy &&            // get all enemy buildings
+        !bw::Filter::IsSpecialBuilding && !bw::Filter::IsNeutral    // ignore resources and pre-exisiting buildings
+    );
+    bool difference = false;
+
+    // Check for new buildings
+    for (bw::Unit building : enemyShadowBuildings) {
+        if (m_enemyBuildings.find(building) == m_enemyBuildings.end()) {
+            m_enemyBuildings.insert(building);
+            updateWalkable(building, false);
+            updateGroundField(building, BUILDING_MARGIN);
+            difference = true;
         }
     }
 
-    for (bw::Unit newBuilding : m_difference) {
-        const bw::WalkPosition topLeft(newBuilding->getTilePosition());
-        const bw::WalkPosition bottomRight = bw::WalkPosition{
-            topLeft.x + newBuilding->getType().tileWidth() * 4,
-            topLeft.y + newBuilding->getType().tileHeight() * 4
-        };
-
-        updateVectorRegion(topLeft, bottomRight, BUILDING_MARGIN);
-    }
-
-    /*Check Remove Building(s)*/
-    for (bw::Unit aliveBuilding : m_aliveBuildings) {
-        //std::cout << "" << (aliveBuilding) << "";
-        bool difference = true;
-        for (bw::Unit shadowBuilding : m_unitManager.shadowUnits(bw::Filter::IsBuilding)) {
-            if (aliveBuilding != shadowBuilding) {
-                continue;
-            }
-            else {
-                difference = false; //we found alive in shadow
-            }
-        }
-        if (difference == true) {
-            m_aliveBuildings.erase(aliveBuilding);
-            m_difference.insert(aliveBuilding);
-            drawFreeBuildingTile(aliveBuilding);
+    // Check for destroyed buildings
+    for (bw::Unit building : m_enemyBuildings) {
+        if (enemyShadowBuildings.find(building) == m_enemyBuildings.end()) {
+            m_enemyBuildings.erase(building);
+            updateWalkable(building, false);
+            difference = true;
         }
     }
-    
 
-    m_difference.clear();
+    // If at least one building has been created or destroyed, regenerate the path
+    if (difference) {
+        generatePath();
+        updatePathField();
+    }
 
-    //Whenever a building is added or removed from map, update the following Tile(s)
-    //if (!m_difference.empty()) {
-    //    //std::cout << "Building Difference" << "";
-    //    for (auto& building : m_difference) {
-    //        drawBuildingTile(building);
-    //        //std::cout << "{" << building << "}";
-    //    }
-    //}
-    //e.g. shadowunits = [1,2,3], m_aliveBuildings = [1,2,3] no change from VectorField::onStart
-    // e.g. shadowunits = [1,2,3,4], m_aliveBuildings = [1,2,3] building added
-    /* m_difference = [4] */
+    // Reset the field for enemy troops
+    // TODO: instead of reinstantializing grid, use setAll (weird behavior with std::nullopt)
+    m_enemyField = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
+
+    // Point vectors away from each mobile enemy troop on the enemy field "layer"
+    for (auto& troop : m_unitManager.shadowUnits(bw::Filter::CanMove && bw::Filter::IsEnemy)) {
+        updateEnemyField(bw::WalkPosition(troop->getPosition()));
+    }
+
+    m_mouse = g_game->getMousePosition() + g_game->getScreenPosition();
+    updateEnemyField(bw::WalkPosition(m_mouse));
 
     if (m_drawField) {
         draw();
     }
+}
 
-    m_mouse = g_game->getMousePosition() + g_game->getScreenPosition();
-    bw::WalkPosition walkMouse(m_mouse);
+void VectorField::generatePath() {
+    m_path.clear();
 
-
-    for (auto& tile : m_mouseTiles) {
-        m_enemyField.set(tile.x, tile.y, Vector(0.0f, 0.0f));
+    std::vector<bw::Position> points;
+    for (auto& building : m_enemyBuildings) {
+        points.push_back(building->getPosition());
     }
 
-    m_mouseTiles.clear();
+    // get the convex hull (i.e. outermost points) of all enemy buildings
+    std::vector<bw::Position> hull = util::convexHull(points);
+    int radius = m_scoutType.sightRange() / 2;
 
-    const int radius = 8;
-    for (int x = walkMouse.x - radius; x <= walkMouse.x + radius; x++) {
-        for (int y = walkMouse.y - radius; y <= walkMouse.y + radius; y++) {
-            bw::WalkPosition walkTile(x, y);
+    // find the tangent lines between each sucessive circle in the hull
+    // TODO: find the arcs between each tangent
+    for (int i = 0; i < hull.size(); i++) {
+        bw::Position current = hull.at(i);
+        bw::Position next = hull.at((i + 1) % hull.size());
 
-            if (!walkTile.isValid()) { continue; }
-
-            bw::Position tileCenter = bw::Position(walkTile) + bw::Position{ 4, 4 };
-            float distance = util::distanceBetween(m_mouse, tileCenter);
-
-            if (distance > radius * 8.0f) { continue; }
-
-            //drawWalkTile(walkTile, bw::Colors::Orange);
-            Vector vec(util::angleBetween(m_mouse, tileCenter));
-            vec *= 1.2 - (distance / (radius * 8.0f));
-
-            m_enemyField.set(x, y, vec);
-            m_mouseTiles.push_back(walkTile);
-        }
+        Vector2 direction = next - current;
+        Vector2 perpendicular = direction.normalize().rotate(-M_PI / 2) * radius;
+        m_path.push_back(bw::WalkPosition(current + perpendicular));
+        m_path.push_back(bw::WalkPosition(next + perpendicular));
     }
 }
 
-void VectorField::updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition bottomRight, int margin) {
-    const int sx = topLeft.x - margin;
-    const int sy = topLeft.y - margin;
-    const int ex = bottomRight.x + margin;
-    const int ey = bottomRight.y + margin;
+// TODO: use util::closestPointOnSegment to orient vectors towards path
+void VectorField::updatePathField() {}
+
+// TODO: refactor to extract common functionality between updateGroundField and updateEnemyField
+void VectorField::updateGroundField(bw::Unit unit, int margin) {
+    const bw::WalkPosition position(unit->getTilePosition());
+
+    const int sx = position.x - margin;
+    const int sy = position.y - margin;
+    const int ex = position.x + unit->getType().tileWidth() * WALKPOS_PER_TILEPOS + margin;
+    const int ey = position.y + unit->getType().tileHeight() * WALKPOS_PER_TILEPOS + margin;
 
     const int mooreRadius = margin;
 
@@ -244,7 +282,7 @@ void VectorField::updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition 
 
             if (!m_walkable.get(x, y)) { continue; }
 
-            Vector centroid{ 0.0f, 0.0f };
+            Vector2 centroid{ 0.0f, 0.0f };
             int filledCount = 0;
 
             for (int rx = -mooreRadius; rx <= mooreRadius; rx++) {
@@ -257,41 +295,70 @@ void VectorField::updateVectorRegion(bw::WalkPosition topLeft, bw::WalkPosition 
                     }
 
                     if (!m_walkable.get(wx, wy)) {
-                        centroid += Vector{ rx, ry };
+                        centroid += Vector2{ rx, ry };
                         filledCount++;
                     }
                 }
             }
 
             if (filledCount == 0) {
-                m_groundField.set(x, y, Vector{ 0.0f, 0.0f });
+                m_groundField.set(x, y, Vector2{ 0.0f, 0.0f });
                 continue;
             }
 
             bw::Position pos(walkTile);
-            centroid = centroid / filledCount + Vector{ pos };
+            centroid = centroid / filledCount + Vector2{ pos };
 
-            double angle = util::angleBetween(centroid, pos);
+            double angle = util::angleBetween<bw::Position>(centroid, pos);
             float distance = util::distanceBetween(centroid, pos);
 
             if (distance > mooreRadius) { continue; }
 
-            Vector vec = Vector{ angle } * (1.3 - (distance / mooreRadius));
+            Vector2 vec = Vector2{ angle } * (1.3 - (distance / mooreRadius));
             m_groundField.set(x, y, vec);
-
         }
     }
 }
 
-std::optional<Vector> VectorField::getVectorSum(int x, int y) const {
-    std::optional<Vector> ground_vector = m_groundField.get(x, y);
-    std::optional<Vector> enemy_vector = m_enemyField.get(x, y);
+void VectorField::updateEnemyField(bw::WalkPosition position) {
+    const int radius = 8;
+    for (int x = position.x - radius; x <= position.x + radius; x++) {
+        for (int y = position.y - radius; y <= position.y + radius; y++) {
+            bw::WalkPosition walkTile(x, y);
+
+            if (!walkTile.isValid()) { continue; }
+
+            bw::Position tileCenter = bw::Position(walkTile) + bw::Position{ 4, 4 };
+            float distance = util::distanceBetween(m_mouse, tileCenter);
+
+            if (distance > radius * 8.0f) { continue; }
+
+            Vector2 vec(util::angleBetween(m_mouse, tileCenter));
+            vec *= 1.2 - (distance / (radius * 8.0f));
+
+            m_enemyField.set(x, y, vec);
+        }
+    }
+}
+
+void VectorField::updateWalkable(bw::Unit unit, bool value) {
+    const bw::WalkPosition walkTile(unit->getTilePosition());
+    for (int x = walkTile.x; x < walkTile.x + unit->getType().tileWidth() * WALKPOS_PER_TILEPOS; x++) {
+        for (int y = walkTile.y; y < walkTile.y + unit->getType().tileHeight() * WALKPOS_PER_TILEPOS; y++) {
+            m_walkable.set(x, y, value);
+        }
+    }
+}
+
+std::optional<Vector2> VectorField::getVectorSum(int x, int y) const {
+    std::optional<Vector2> ground_vector = m_groundField.get(x, y);
+    std::optional<Vector2> enemy_vector = m_enemyField.get(x, y);
 
     if (ground_vector == std::nullopt || enemy_vector == std::nullopt) {
         return std::nullopt;
     }
 
-    Vector vector = *ground_vector + *enemy_vector;
+    Vector2 vector = *ground_vector + *enemy_vector;
     return vector;
 }
 
@@ -300,7 +367,7 @@ void VectorField::onSendText(const std::string& text) {
         g_game->pauseGame();
     }
 
-    if (text == "/field") {
+    if (text == "/drawField") {
         m_drawField = !m_drawField;
     }
 };
@@ -322,14 +389,7 @@ void VectorField::draw() const {
             //bw::Color tileColor = m_walkable.get(x, y) ? bw::Colors::Green : bw::Colors::Red;
 
             if (m_walkable.get(x, y)) {
-                std::optional<Vector> ground_vector = m_groundField.get(x, y);
-                std::optional<Vector> enemy_vector = m_enemyField.get(x, y);
-
-                //if (ground_vector == std::nullopt || enemy_vector == std::nullopt) {
-                //    continue;
-                //}
-
-                std::optional<Vector> vector = getVectorSum(x, y);
+                std::optional<Vector2> vector = getVectorSum(x, y);
 
                 if (vector == std::nullopt) {
                     continue;
@@ -342,11 +402,17 @@ void VectorField::draw() const {
         }
     }
 
+    for (auto& building : m_enemyBuildings) {
+        g_game->drawCircleMap(building->getPosition(), m_scoutType.sightRange() / 2, bw::Colors::Cyan);
+    }
+
+    drawPolyLine(m_path, bw::Colors::Cyan);
+
     bw::Position pixelMouse = m_mouse;
     bw::WalkPosition walkMouse(m_mouse);
     bw::TilePosition tileMouse(m_mouse);
 
-    drawWalkTile(walkMouse, bw::Colors::Cyan);
+    drawWalkTile(walkMouse, bw::Colors::Purple);
     //drawBuildTile(tileMouse, bw::Colors::Purple);
 
     const char white = '\x04';
@@ -384,7 +450,7 @@ void VectorField::drawBuildTile(bw::TilePosition buildTile, bw::Color color) con
     g_game->drawLineMap(px, py + d, px, py, color);
 }
 
-void VectorField::drawWalkVector(bw::WalkPosition walkTile, Vector vector, bw::Color color) const {
+void VectorField::drawWalkVector(bw::WalkPosition walkTile, Vector2 vector, bw::Color color) const {
     const int length = 6;
     const bw::Position tail = bw::Position(walkTile) + bw::Position{ 4, 4 };
     const bw::Position head = tail + vector * length;
@@ -393,20 +459,18 @@ void VectorField::drawWalkVector(bw::WalkPosition walkTile, Vector vector, bw::C
     g_game->drawCircleMap(head, 1, bw::Colors::Orange, true);
 }
 
-void VectorField::drawBuildingTile(bw::Unit building) { //add another parameter later
-    const bw::WalkPosition walkTile(building->getTilePosition());
-    for (int x = walkTile.x; x < walkTile.x + building->getType().tileWidth() * 4; x++) {
-        for (int y = walkTile.y; y < walkTile.y + building->getType().tileHeight() * 4; y++) {
-            m_walkable.set(x, y, false);
-        }
+void VectorField::drawPolyLine(std::vector<bw::WalkPosition> polyLine, bw::Color color) const {
+    if (polyLine.size() < 2) {
+        return;
     }
-}
 
-void VectorField::drawFreeBuildingTile(bw::Unit building) {
-    const bw::WalkPosition walkTile(building->getTilePosition());
-    for (int x = walkTile.x; x < walkTile.x + building->getType().tileWidth() * 4; x++) {
-        for (int y = walkTile.y; y < walkTile.y + building->getType().tileHeight() * 4; y++) {
-            m_walkable.set(x, y, true);
-        }
+    for (auto& point : polyLine) {
+        g_game->drawCircleMap(bw::Position(point), 3, bw::Colors::Red, true);
+    }
+
+    for (int i = 0; i < polyLine.size() - 1; i++) {
+        const bw::Position start(polyLine.at(i));
+        const bw::Position end(polyLine.at(i + 1));
+        g_game->drawLineMap(start, end, bw::Colors::Red);
     }
 }

@@ -32,6 +32,12 @@ public:
         m_grid[x][y] = val;
     }
 
+    inline void setAll(const T& val) {
+        for (std::vector column : m_grid) {
+            std::fill(column.begin(), column.end(), val);
+        }
+    }
+
     inline size_t width() const {
         return m_width;
     }
