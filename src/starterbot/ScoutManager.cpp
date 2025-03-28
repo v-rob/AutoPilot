@@ -31,6 +31,37 @@ void ScoutManager::onStart() {
     //maneuverPath.clear();
     finishSearchEnemyBase = false;
     goingRight = true;
+    startingLocations.clear();
+
+    for (bw::TilePosition pos : g_game->getStartLocations()){
+        std::cout << pos << "";
+    }
+
+    //first, make a list of all TilePosition Starting locations without our start location.
+
+    // Determine our start location based on our first command center, nexus, or hatchery
+    bw::TilePosition myBase = bw::TilePositions::None;
+
+    for (const auto& unit : g_self->getUnits()) {
+        if (unit->getType().isResourceDepot()) { // Command Center, Nexus, Hatchery
+            myBase = unit->getTilePosition();
+            break; // Found it, no need to continue
+        }
+    }
+
+    std::cout << "This is where my base is at: " << myBase << "\n";
+
+
+    std::cout << "And here's the list of the possible places that our scout should move: " << "";
+    for (bw::TilePosition spawnPos : g_game->getStartLocations()) {
+        //if the pos is not my base, add it to the starting locations that the scout should 
+        if (spawnPos.x != myBase.x and spawnPos.y != myBase.y){
+            startingLocations.push_back(spawnPos);
+            std::cout << spawnPos << ""; 
+        }
+    }
+
+    std::cout << "\n " << "";
 }
 
 void ScoutManager::onFrame() {
@@ -42,20 +73,29 @@ void ScoutManager::onFrame() {
     bw::TilePosition secondPos;
     bw::TilePosition middlePos;
 
-    if (finishSearchEnemyBase) {
+    std::cout << "Finish Search Enemy Base? " << finishSearchEnemyBase << "\n"; //once when reached to spawn loc, set to 1, incorrect
+
+
+
+    if (finishSearchEnemyBase == true){
         //REPLACE THIS WITH THE POINTS FROM THE VECTOR FIELD
-        firstPos = bw::TilePosition(enemyBasePos.x + 6,enemyBasePos.y - 6);
-        secondPos = bw::TilePosition(enemyBasePos.x - 6, enemyBasePos.y - 6);
-        middlePos = bw::TilePosition(enemyBasePos.x, enemyBasePos.y - 9);
+      //std::cout << "[" << enemyBasePos.x << ", " << enemyBasePos.y << "]";
+        if (enemyBasePos.y <= 65){//this means if the enemy base is on the top half
+            firstPos = bw::TilePosition(enemyBasePos.x + 6, enemyBasePos.y +6);
+            secondPos = bw::TilePosition(enemyBasePos.x - 6, enemyBasePos.y +6);
+            middlePos = bw::TilePosition(enemyBasePos.x, enemyBasePos.y +9);
+        }
+        if (enemyBasePos.y > 65){//if enemy base is on bottom half
+            firstPos = bw::TilePosition(enemyBasePos.x + 6, enemyBasePos.y - 6);
+            secondPos = bw::TilePosition(enemyBasePos.x - 6, enemyBasePos.y - 6);
+            middlePos = bw::TilePosition(enemyBasePos.x, enemyBasePos.y - 9);
+        }
     }
 
 
 
     for (bw::Unit scout : m_scouts) {
         if (finishSearchEnemyBase == true) { // we will use the vectors for maneuvering
-        //    for (VectorField vector : ) {
-        //        scout->move(vector);
-        //    }
             if (reachedPointOne) {
                 scout->move(bw::Position(middlePos));
                 if (std::abs(scout->getTilePosition().x - middlePos.x) <= 1 && std::abs(scout->getTilePosition().y - middlePos.y) <= 1) {
@@ -113,24 +153,23 @@ void ScoutManager::onFrame() {
 
         // Otherwise, find the first potential start location that is not yet explored and
         // send the scout to explore it.
-        for (bw::TilePosition pos : g_game->getStartLocations()) {
+
+
+   //   for (bw::TilePosition pos : g_game->getStartLocations()) { //g_game->getStartLocations() is a std::deque<bw::TilePosition>
+        for (bw::TilePosition pos : startingLocations) {
             if (!g_game->isExplored(pos)) {
                 scout->move(bw::Position(pos));
-                break;
-            }
+                continue; //continue searching instead of breaking early
+                //break;
+            } //this means that spawn location is already explored
             //check if scout is at an enemy spawn location
             bw::Unit found = m_unitManager.enemyUnit();
+            std::cout << found << "\n";
 
-            if ((g_game->isExplored(pos) and found != nullptr and finishSearchEnemyBase == false)
-                || !g_game->isExplored(pos) and (std::abs(pos.x - scout->getPosition().x) < 3
-                    and (pos.y - std::abs(scout->getPosition().y) < 3) and found == nullptr)) { 
+            if (g_game->isExplored(pos) and found != nullptr and !finishSearchEnemyBase){
                 //|| !g_game->isExplored(pos) and (std::abs(pos.x - scout->getPosition().x) < 3
-                //    and (pos.y - std::abs(scout->getPosition().y) < 3) and found == nullptr)
-                
-                
-                //switch this back to != when done experimenting, 2nd condition for scout that can't reach
-                //to position because it's stuck from moving to spawn pos due to building.
-                if (finishSearchEnemyBase !=false) {
+                //    and (pos.y - std::abs(scout->getPosition().y) < 3) and found == nullptr)) {
+                if (finishSearchEnemyBase != false) {
                     std::cout << "Found base" << std::endl;
                 }
                 enemyBasePos = pos; //TilePosition
@@ -138,6 +177,14 @@ void ScoutManager::onFrame() {
                 break;
             }
         }
+
+      //this is for using the scouts current position to get the new position
+      //first get the current scout position
+      bw::Position scoutPos = scout->getPosition();
+      //next, get the vector of the current position that the scout is at
+      //Vector2 vector = m_vector  getVectorSum 
+      // bw::Position newPosition = scoutPos + bw::WalkPosition(scoutPos.x, scoutPos.y);
+      //scout->move(newPosition);
     }
 }
 

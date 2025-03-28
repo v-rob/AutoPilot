@@ -22,6 +22,7 @@ private:
     bool reachedPointTwo;
     bool reachedPointMiddle;
     bool goingRight;
+    std::deque<bw::TilePosition> startingLocations;
 
 public:
     ScoutManager(UnitManager& unitManager);
