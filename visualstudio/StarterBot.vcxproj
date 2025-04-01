@@ -30,7 +30,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\starterbot\CombatManager.cpp" />
-    <ClCompile Include="..\src\starterbot\main.cpp" />
     <ClCompile Include="..\src\starterbot\AutoPilotBot.cpp" />
     <ClCompile Include="..\src\starterbot\ProductionManager.cpp" />
     <ClCompile Include="..\src\starterbot\ScoutManager.cpp" />

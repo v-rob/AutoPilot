@@ -14,8 +14,6 @@ namespace bw {
 extern bw::GameWrapper& g_game;
 extern bw::Player g_self;
 
-extern int g_gameCount;
-
 // BWAPI does not have a filter for the UnitInterface::getBuildUnit() method. This method
 // is useful for the bot, so we implement our own polyfill for it.
 namespace BWAPI::Filter {
