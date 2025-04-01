@@ -3,8 +3,6 @@
 bw::GameWrapper& g_game = bw::Broodwar;
 bw::Player g_self = nullptr;
 
-int g_gameCount = 0;
-
 namespace BWAPI::Filter {
     static Unit implBuildUnit(Unit u) {
         return u->getBuildUnit();
