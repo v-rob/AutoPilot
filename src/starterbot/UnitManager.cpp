@@ -7,16 +7,10 @@ ShadowUnit UnitManager::getShadow(bw::Unit unit) {
         return &it->second;
     }
 
-    // Otherwise, create a new shadow unit object and insert it into the map and set.
+    // Otherwise, create a new shadow unit object and insert it into the map and set. We
+    // don't add it to the player sets because that automatically happens in onFrame().
     ShadowUnit shadow = &m_shadowMap.emplace(unit->getID(), ShadowUnitImpl(unit)).first->second;
     m_shadowUnits.insert(shadow);
-
-    // If the unit is owned by the bot or the enemy, add it to the corresponding set.
-    if (shadow->getPlayer() == g_self) {
-        m_selfUnits.insert(shadow);
-    } else if (shadow->getPlayer() == g_game->enemy()) {
-        m_enemyUnits.insert(shadow);
-    }
 
     return shadow;
 }
@@ -188,9 +182,21 @@ void UnitManager::onStart() {
 
 void UnitManager::onFrame() {
     // Every frame, create a shadow unit for any units that don't currently have one.
-    for (bw::Player player : g_game->getPlayers()) {
-        for (bw::Unit unit : player->getUnits()) {
-            getShadow(unit);
+    for (bw::Unit unit : g_game->getAllUnits()) {
+        bw::Unit shadow = getShadow(unit);
+
+        // Units may change players in the middle of the game, including to and from the
+        // neutral player, such as when a refinery is placed on a vespene gas geyser. So,
+        // we update the player sets every frame for each known unit.
+        if (shadow->getPlayer() == g_self) {
+            m_selfUnits.insert(shadow);
+            m_enemyUnits.erase(shadow);
+        } else if (shadow->getPlayer() == g_game->enemy()) {
+            m_selfUnits.erase(shadow);
+            m_enemyUnits.insert(shadow);
+        } else {
+            m_selfUnits.erase(shadow);
+            m_enemyUnits.erase(shadow);
         }
     }
 

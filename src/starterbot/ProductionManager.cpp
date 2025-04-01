@@ -12,11 +12,23 @@ bool ProductionManager::addBuildRequest(bw::UnitType type) {
         return false;
     }
 
-    // Get a build location in a reasonable range near the center of the base. If no
-    // location could be found, return false.
-    bw::TilePosition pos = g_game->getBuildLocation(
-        type, g_self->getStartLocation(), 64, type.requiresCreep());
-    if (!pos.isValid()) {
+    // Get a build location in a reasonable range near the center of the base.
+    bw::TilePosition pos;
+
+    if (type.isRefinery()) {
+        // If this is a refinery, then we have to find a vespene gas geyser manually since
+        // getBuildLocation() finds terrible and/or unexplored locations for refineries.
+        bw::Unit geyser = g_game->getClosestUnit(bw::Position(g_self->getStartLocation()),
+            bw::GetType == bw::UnitTypes::Resource_Vespene_Geyser);
+        pos = geyser != nullptr ? geyser->getTilePosition() : bw::TilePositions::Invalid;
+    } else {
+        // For everything else, getBuildLocation() is sufficient to get a good position.
+        pos = g_game->getBuildLocation(type, g_self->getStartLocation(), 64, type.requiresCreep());
+    }
+
+    // If we couldn't find a location, or that location is in an unexplored area (meaning
+    // nothing can be placed there), return false.
+    if (!pos.isValid() || !g_game->isExplored(pos)) {
         return false;
     }
 
