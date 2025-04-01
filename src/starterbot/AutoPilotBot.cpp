@@ -29,6 +29,10 @@ void AutoPilotBot::onStart() {
 
     // We want the user to be able to send explicit user input.
     g_game->enableFlag(bw::Flag::UserInput);
+
+    // For now, we enable complete map information in order to implement our machine
+    // learning algorithm without having good scouting implemented.
+    g_game->enableFlag(bw::Flag::CompleteMapInformation);
 }
 
 void AutoPilotBot::onEnd(bool isWinner) {
