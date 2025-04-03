@@ -22,6 +22,16 @@ private:
 public:
     ProductionManager(UnitManager& unitManager);
 
+    // Returns the current amount of minerals and gas the player has, but adjusted for
+    // build requests. If a unit is moving to place a building, the resources that will be
+    // used to place the building are not considered available by these functions.
+    int freeMinerals();
+    int freeGas();
+
+    // Returns whether there are sufficient resources to make a unit of the specified type
+    // according to freeMinerals() and freeGas().
+    bool hasEnoughResources(bw::UnitType type);
+
     // Requests that a building of a certain type be constructed. If there are sufficient
     // resources, a place to put the building, and a worker to construct it, then this
     // function returns true. Otherwise, the request fails.

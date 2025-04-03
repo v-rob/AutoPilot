@@ -4,11 +4,54 @@ ProductionManager::ProductionManager(UnitManager& unitManager) :
     m_unitManager(unitManager) {
 }
 
+int ProductionManager::freeMinerals() {
+    // Starting with the player's current amount of minerals, subtract the mineral cost of
+    // each build request that is pending.
+    int minerals = g_self->minerals();
+
+    for (bw::Unit builder : m_builders) {
+        // As explained in countBuildRequests(), we only want to include buildings that
+        // haven't been placed yet, so we disclude builders with the following conditions.
+        if (builder->getBuildUnit() == nullptr && !builder->isMorphing()) {
+            minerals -= builder->getBuildType().mineralPrice();
+        }
+    }
+
+    // In a few edge cases, it's possible to try to place more buildings than we have
+    // resources for (meaning the build request will fail when trying to place the
+    // building), so make sure this value is nonnegative.
+    return std::max(minerals, 0);
+}
+
+int ProductionManager::freeGas() {
+    // The calculation for the amount of free gas is identical for that for minerals.
+    int gas = g_self->gas();
+
+    for (bw::Unit builder : m_builders) {
+        if (builder->getBuildUnit() == nullptr && !builder->isMorphing()) {
+            gas -= builder->getBuildType().gasPrice();
+        }
+    }
+
+    return std::max(gas, 0);
+}
+
+bool ProductionManager::hasEnoughResources(bw::UnitType type) {
+    return type.mineralPrice() <= freeMinerals() && type.gasPrice() <= freeGas();
+}
+
 bool ProductionManager::addBuildRequest(bw::UnitType type) {
-    // The game is fairly slow at finding potential build locations, so to prevent
-    // calculating it more than necessary, we do a quick mineral check to see if we can
-    // even possibly construct this building in the first place.
-    if (type.mineralPrice() > g_self->minerals()) {
+    // If we don't have enough resources to build a building of this type, then don't
+    // waste time by sending a unit to try to place a building that is guaranteed to fail.
+    if (!hasEnoughResources(type)) {
+        return false;
+    }
+
+    // Reserve a worker to construct or morph into the building, if we have one. Since
+    // finding a build position is a really slow operation, it is better to fail quickly
+    // if we don't have a unit rather than suffer the extra latency.
+    bw::Unit builder = m_unitManager.reserveUnit(bw::GetType == type.whatBuilds().first);
+    if (builder == nullptr) {
         return false;
     }
 
@@ -27,14 +70,9 @@ bool ProductionManager::addBuildRequest(bw::UnitType type) {
     }
 
     // If we couldn't find a location, or that location is in an unexplored area (meaning
-    // nothing can be placed there), return false.
+    // nothing can be placed there), release the unit and return false.
     if (!pos.isValid() || !g_game->isExplored(pos)) {
-        return false;
-    }
-
-    // Reserve a worker to construct or morph into the building, if we have one.
-    bw::Unit builder = m_unitManager.reserveUnit(bw::GetType == type.whatBuilds().first);
-    if (builder == nullptr) {
+        m_unitManager.releaseUnit(builder);
         return false;
     }
 
@@ -81,6 +119,13 @@ int ProductionManager::countBuildRequests(bw::UnitType type) {
 }
 
 bool ProductionManager::addTrainRequest(bw::UnitType type, bool morph) {
+    // If we don't have enough resources to train this unit given our build requests,
+    // don't train anything because that would take away resources from the build requests
+    // and possibly make the building placement fail.
+    if (!hasEnoughResources(type)) {
+        return false;
+    }
+
     // Try to reserve a unit of the appropriate type that trains or morphs into the
     // requested unit, if we have one.
     bw::Unit trainer = m_unitManager.reserveUnit(bw::GetType == type.whatBuilds().first);
