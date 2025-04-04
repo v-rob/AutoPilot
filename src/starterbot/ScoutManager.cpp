@@ -58,6 +58,7 @@ void ScoutManager::onStart() {
         if (spawnPos.x != myBase.x and spawnPos.y != myBase.y){
             startingLocations.push_back(spawnPos);
             std::cout << spawnPos << ""; 
+            g_game->
         }
     }
 
@@ -96,46 +97,60 @@ void ScoutManager::onFrame() {
 
     for (bw::Unit scout : m_scouts) {
         if (finishSearchEnemyBase == true) { // we will use the vectors for maneuvering
-            if (reachedPointOne) {
-                scout->move(bw::Position(middlePos));
-                if (std::abs(scout->getTilePosition().x - middlePos.x) <= 1 && std::abs(scout->getTilePosition().y - middlePos.y) <= 1) {
-                    goingRight = true;
-                    reachedPointOne = false;
-                    reachedPointTwo = false;
-                    reachedPointMiddle = true;
-                }
+
+            //this is for using the scouts current position to get the new position
+            //first get the current scout position
+            bw::WalkPosition scoutPos = bw::WalkPosition(scout->getPosition());
+            //next, get the vector of the current position that the scout is at
+            std::optional<Vector2> vector = m_vectorField.getVectorSum(scoutPos.x, scoutPos.y);
+            if (vector != std::nullopt) {
+                bw::Position newPosition = bw::Position(scoutPos) + bw::Position((*vector) * 5);
+                scout->move(bw::Position(newPosition));
             }
 
-            if (reachedPointMiddle){
-                if (goingRight) {
-                    scout->move(bw::Position(secondPos)); //move() takes in a Position, not TilePosition
-                    if (std::abs(scout->getTilePosition().x - secondPos.x) <= 1 && std::abs(scout->getTilePosition().y - secondPos.y) <= 1) {
-                        //scout has just reached to the secondPos location
-                        reachedPointOne = false;
-                        reachedPointTwo = true;
-                        reachedPointMiddle = false; 
-                    }
-                }
-                else { //going left
-                    scout->move(bw::Position(firstPos));// takes in a Position, not TilePosition
-                    if (std::abs(scout->getTilePosition().x - firstPos.x) <= 1 && std::abs(scout->getTilePosition().y - firstPos.y) <= 1) {
-                        //scout has just reached to the secondPos location
-                        reachedPointOne = true;
-                        reachedPointTwo = false;
-                        reachedPointMiddle = false;
-                    }
-                }
-            }
-            if (reachedPointTwo) {
-                scout->move(bw::Position(middlePos));
-                if (std::abs(scout->getTilePosition().x - middlePos.x) <= 1 && std::abs(scout->getTilePosition().y - middlePos.y) <= 1) {
-                    //scout has just reached to the secondPos location
-                    reachedPointOne = false;
-                    reachedPointTwo = false;
-                    reachedPointMiddle = true;
-                    goingRight = false;
-                }
-            }
+
+
+
+            //if (reachedPointOne) {
+            //    scout->move(bw::Position(middlePos));
+            //    if (std::abs(scout->getTilePosition().x - middlePos.x) <= 1 && std::abs(scout->getTilePosition().y - middlePos.y) <= 1) {
+            //        goingRight = true;
+            //        reachedPointOne = false;
+            //        reachedPointTwo = false;
+            //        reachedPointMiddle = true;
+            //    }
+            //}
+
+            //if (reachedPointMiddle){
+            //    if (goingRight) {
+            //        scout->move(bw::Position(secondPos)); //move() takes in a Position, not TilePosition
+            //        if (std::abs(scout->getTilePosition().x - secondPos.x) <= 1 && std::abs(scout->getTilePosition().y - secondPos.y) <= 1) {
+            //            //scout has just reached to the secondPos location
+            //            reachedPointOne = false;
+            //            reachedPointTwo = true;
+            //            reachedPointMiddle = false; 
+            //        }
+            //    }
+            //    else { //going left
+            //        scout->move(bw::Position(firstPos));// takes in a Position, not TilePosition
+            //        if (std::abs(scout->getTilePosition().x - firstPos.x) <= 1 && std::abs(scout->getTilePosition().y - firstPos.y) <= 1) {
+            //            //scout has just reached to the secondPos location
+            //            reachedPointOne = true;
+            //            reachedPointTwo = false;
+            //            reachedPointMiddle = false;
+            //        }
+            //    }
+            //}
+            //if (reachedPointTwo) {
+            //    scout->move(bw::Position(middlePos));
+            //    if (std::abs(scout->getTilePosition().x - middlePos.x) <= 1 && std::abs(scout->getTilePosition().y - middlePos.y) <= 1) {
+            //        //scout has just reached to the secondPos location
+            //        reachedPointOne = false;
+            //        reachedPointTwo = false;
+            //        reachedPointMiddle = true;
+            //        goingRight = false;
+            //    }
+            //}
             break;
         }
         // If the scout is currently moving towards some target location, let them move.
@@ -170,13 +185,17 @@ void ScoutManager::onFrame() {
             }
         }
 
-      //this is for using the scouts current position to get the new position
-      //first get the current scout position
-      bw::Position scoutPos = scout->getPosition();
-      //next, get the vector of the current position that the scout is at
-      //Vector2 vector = m_vector  getVectorSum 
-      // bw::Position newPosition = scoutPos + bw::WalkPosition(scoutPos.x, scoutPos.y);
-      //scout->move(newPosition);
+          ////this is for using the scouts current position to get the new position
+          ////first get the current scout position
+          //bw::WalkPosition scoutPos = bw::WalkPosition(scout->getPosition());
+          ////next, get the vector of the current position that the scout is at
+          //std::optional<Vector2> vector = m_vectorField.getVectorSum(scoutPos.x, scoutPos.y);
+          //if (vector != std::nullopt) {
+          //    bw::WalkPosition newPosition;
+          //    newPosition.x = scoutPos.x + (*vector).x;
+          //    newPosition.y = scoutPos.y + (*vector).y;
+          //    scout->move(bw::Position(newPosition));
+          //}
     }
 }
 

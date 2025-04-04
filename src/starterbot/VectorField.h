@@ -97,6 +97,8 @@ private:
 
 public:
     VectorField(UnitManager& unitManager);
+    // Returns sum of vectors at a specific point
+    std::optional<Vector2> getVectorSum(int x, int y) const;
 
 protected:
     virtual void onStart() override;
@@ -118,8 +120,6 @@ protected:
     // Update the walkable values under a given building/resource
     void updateWalkable(bw::Unit unit, bool value);
 
-    // Returns sum of vectors at a specific point
-    std::optional<Vector2> getVectorSum(int x, int y) const;
 
     void draw() const;
     void drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const;
