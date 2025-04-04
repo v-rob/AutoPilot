@@ -12,148 +12,54 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\bwapi\BWAPIClient\BulletImpl.cpp">
-      <Filter>BWAPIClient</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPIClient\Client.cpp">
-      <Filter>BWAPIClient</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPIClient\ForceImpl.cpp">
-      <Filter>BWAPIClient</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPIClient\GameImpl.cpp">
-      <Filter>BWAPIClient</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPIClient\PlayerImpl.cpp">
-      <Filter>BWAPIClient</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPIClient\RegionImpl.cpp">
-      <Filter>BWAPIClient</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPIClient\UnitImpl.cpp">
-      <Filter>BWAPIClient</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\AIModule.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\BroodwarOutputDevice.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\BulletType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\BWAPI.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Color.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\DamageType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Error.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Event.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\ExplosionType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Filters.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Forceset.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Game.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\GameType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Order.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Player.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Playerset.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\PlayerType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Position.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Race.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Region.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Regionset.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Streams.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\TechType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Unit.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\UnitCommand.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\UnitCommandType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\Unitset.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\UnitSizeType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\UnitType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\UpgradeType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\BWAPILIB\WeaponType.cpp">
-      <Filter>BWAPILIB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\shared\BulletShared.cpp">
-      <Filter>Shared</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\shared\ForceShared.cpp">
-      <Filter>Shared</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\shared\GameShared.cpp">
-      <Filter>Shared</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\shared\PlayerShared.cpp">
-      <Filter>Shared</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\shared\RegionShared.cpp">
-      <Filter>Shared</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\bwapi\shared\UnitShared.cpp">
-      <Filter>Shared</Filter>
-    </ClCompile>
+    <ClCompile Include="..\src\bwapi\BWAPIClient\BulletImpl.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPIClient\Client.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPIClient\ForceImpl.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPIClient\GameImpl.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPIClient\PlayerImpl.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPIClient\RegionImpl.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPIClient\UnitImpl.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\AIModule.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\BroodwarOutputDevice.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\BulletType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\BWAPI.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Color.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\DamageType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Error.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Event.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\ExplosionType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Filters.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Forceset.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Game.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\GameType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Order.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Player.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Playerset.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\PlayerType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Position.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Race.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Region.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Regionset.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Streams.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\TechType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Unit.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\UnitCommand.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\UnitCommandType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\Unitset.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\UnitSizeType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\UnitType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\UpgradeType.cpp" />
+    <ClCompile Include="..\src\bwapi\BWAPILIB\WeaponType.cpp" />
+    <ClCompile Include="..\src\bwapi\shared\BulletShared.cpp" />
+    <ClCompile Include="..\src\bwapi\shared\ForceShared.cpp" />
+    <ClCompile Include="..\src\bwapi\shared\GameShared.cpp" />
+    <ClCompile Include="..\src\bwapi\shared\PlayerShared.cpp" />
+    <ClCompile Include="..\src\bwapi\shared\RegionShared.cpp" />
+    <ClCompile Include="..\src\bwapi\shared\UnitShared.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\bwapi\BWAPIClient\Command.h">
-      <Filter>BWAPIClient</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\bwapi\BWAPIClient\Convenience.h">
-      <Filter>BWAPIClient</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\bwapi\shared\Templates.h">
-      <Filter>Shared</Filter>
-    </ClInclude>
+    <ClInclude Include="..\src\bwapi\BWAPIClient\Command.h" />
+    <ClInclude Include="..\src\bwapi\BWAPIClient\Convenience.h" />
+    <ClInclude Include="..\src\bwapi\shared\Templates.h" />
   </ItemGroup>
 </Project>

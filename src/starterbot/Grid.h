@@ -33,7 +33,7 @@ public:
     }
 
     inline void setAll(const T& val) {
-        for (std::vector column : m_grid) {
+        for (std::vector<T>& column : m_grid) {
             std::fill(column.begin(), column.end(), val);
         }
     }

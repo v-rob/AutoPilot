@@ -15,10 +15,19 @@
  *   Build Tile   (32x32 pixels)  bw::TilePosition
  */
 
+template <typename T>
+T util::lerp(T a, T b, float t) {
+    return a + (b - a) * t;
+}
+
+double util::shortestAngularDistance(double a, double b) {
+    double diff = fmod(b - a, M_PI * 2.0);
+    return 2.0 * fmod(diff, M_PI * 2.0) - diff;
+}
 
 double util::boundAngle(double angle) {
-    if (angle >= M_PI * 2) { return angle - M_PI * 2; }
-    if (angle < 0) { return M_PI * 2 + angle; }
+    if (angle >= M_PI * 2.0) { return angle - M_PI * 2.0; }
+    if (angle < 0) { return M_PI * 2.0 + angle; }
     return angle;
 }
 
@@ -28,7 +37,8 @@ double util::angleBetween(const T& point1, const T& point2) {
     return boundAngle(std::atan2(direction.y, direction.x));
 }
 
-float util::distanceBetween(const Vector2& point1, const Vector2& point2) {
+template <typename T>
+float util::distanceBetween(const T& point1, const T& point2) {
     float dx = static_cast<float>(point2.x - point1.x);
     float dy = static_cast<float>(point2.y - point1.y);
     return std::sqrt(dx * dx + dy * dy);
@@ -49,7 +59,7 @@ std::vector<bw::Position> util::convexHull(std::vector<bw::Position> points) {
         return (val > 0) ? 1 : 2;   // clock or counterclock wise
     };
 
-    int n = points.size();
+    int n = static_cast<int>(points.size());
 
     if (n < 3) return {};
 
@@ -80,13 +90,14 @@ std::vector<bw::Position> util::convexHull(std::vector<bw::Position> points) {
     return hull;
 }
 
-bw::Position util::closestPointOnSegment(bw::Position point, std::pair<bw::Position, bw::Position> segment) {
+template <typename T>
+T util::closestPointOnSegment(T point, std::pair<T, T> lineSegment) {
     // https://stackoverflow.com/a/6853926/27539798
 
-    float A = point.x - segment.first.x;
-    float B = point.y - segment.first.y;
-    float C = segment.second.x - segment.first.x;
-    float D = segment.second.y - segment.first.y;
+    float A = point.x - lineSegment.first.x;
+    float B = point.y - lineSegment.first.y;
+    float C = lineSegment.second.x - lineSegment.first.x;
+    float D = lineSegment.second.y - lineSegment.first.y;
 
     float dot = A * C + B * D;
     float len_sq = C * C + D * D;
@@ -96,14 +107,14 @@ bw::Position util::closestPointOnSegment(bw::Position point, std::pair<bw::Posit
         param = dot / len_sq;
     }
 
-    bw::Position closest;
+    T closest;
 
     if (param < 0) {
-        closest = segment.first;
+        closest = lineSegment.first;
     } else if (param > 1) {
-        closest = segment.second;
+        closest = lineSegment.second;
     } else {
-        closest = segment.first + bw::Position(param * C, param * D);
+        closest = lineSegment.first + T(param * C, param * D);
     }
 
     return closest;
@@ -116,10 +127,10 @@ Vector2::Vector2(int x_, int y_) : bw::Point<float, 1>(static_cast<float>(x_), s
 Vector2::Vector2(double x_, double y_) : bw::Point<float, 1>(static_cast<float>(x_), static_cast<float>(y_)) {}
 Vector2::Vector2(const bw::Point<float, 1>& p) : bw::Point<float, 1>(p) {}
 Vector2::Vector2(const bw::Position& p) : bw::Point<float, 1>(p) {}
-Vector2::Vector2(double angle) : bw::Point<float, 1>(std::cos(angle), std::sin(angle)) {}
+Vector2::Vector2(double angle) : bw::Point<float, 1>(static_cast<float>(std::cos(angle)), static_cast<float>(std::sin(angle))) {}
 
 float Vector2::length() {
-    return util::distanceBetween({ 0.0f, 0.0f }, { x, y });
+    return util::distanceBetween<Vector2>({ 0.0f, 0.0f }, { x, y });
 }
 
 Vector2 Vector2::normalize() {
@@ -139,6 +150,12 @@ VectorField::VectorField(UnitManager& unitManager) : m_unitManager(unitManager) 
 
 void VectorField::onStart() {
 
+    //bw::WalkPosition p1 = { 0, 0 };
+    //bw::WalkPosition p2 = { 10, 10 };
+    //bw::WalkPosition p3 = { 5, 4 };
+
+    //std::cout << util::closestPointOnSegment(p3, { p1, p2 }) << std::endl;
+
     m_enemyBuildings.clear();
 
     // width and height in terms of WalkPosition; mapWidth and mapHeight return values in terms of TilePosition
@@ -147,7 +164,7 @@ void VectorField::onStart() {
 
     m_walkable = Grid<char>(m_width, m_height, true);
 
-    m_pathField   = Grid<std::optional<Vector2>>(m_width, m_height, std::nullopt);
+    m_pathField   = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
     m_groundField = Grid<std::optional<Vector2>>(m_width, m_height, std::nullopt);
     m_enemyField  = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
 
@@ -205,7 +222,7 @@ void VectorField::onFrame() {
 
     // Check for destroyed buildings
     for (bw::Unit building : m_enemyBuildings) {
-        if (enemyShadowBuildings.find(building) == m_enemyBuildings.end()) {
+        if (enemyShadowBuildings.find(building) == enemyShadowBuildings.end()) {
             m_enemyBuildings.erase(building);
             updateWalkable(building, false);
             difference = true;
@@ -219,8 +236,7 @@ void VectorField::onFrame() {
     }
 
     // Reset the field for enemy troops
-    // TODO: instead of reinstantializing grid, use setAll (weird behavior with std::nullopt)
-    m_enemyField = Grid<std::optional<Vector2>>(m_width, m_height, Vector2(0.0f, 0.0f));
+    m_enemyField.setAll(Vector2(0.0f, 0.0f));
 
     // Point vectors away from each mobile enemy troop on the enemy field "layer"
     for (auto& troop : m_unitManager.shadowUnits(bw::Filter::CanMove && bw::Filter::IsEnemy)) {
@@ -245,7 +261,7 @@ void VectorField::generatePath() {
 
     // get the convex hull (i.e. outermost points) of all enemy buildings
     std::vector<bw::Position> hull = util::convexHull(points);
-    int radius = m_scoutType.sightRange() / 2;
+    float radius = m_scoutType.sightRange() / 2.0f;
 
     // find the tangent lines between each sucessive circle in the hull
     // TODO: find the arcs between each tangent
@@ -261,7 +277,61 @@ void VectorField::generatePath() {
 }
 
 // TODO: use util::closestPointOnSegment to orient vectors towards path
-void VectorField::updatePathField() {}
+void VectorField::updatePathField() {
+    m_enemyField.setAll(Vector2(0.0f, 0.0f));
+
+    if (m_path.size() < 2) {
+        return;
+    }
+
+    const int margin = 4;
+
+    bw::WalkPosition topLeft = { m_width, m_height };
+    bw::WalkPosition bottomRight = { 0, 0 };
+
+    for (bw::WalkPosition point : m_path) {
+        topLeft.x = std::min(topLeft.x, point.x);
+        topLeft.y = std::min(topLeft.y, point.y);
+        bottomRight.x = std::max(bottomRight.x, point.x);
+        bottomRight.y = std::max(bottomRight.y, point.y);
+    }
+
+    for (int x = topLeft.x - margin; x < bottomRight.x + margin; x++) {
+        for (int y = topLeft.y - margin; y < bottomRight.y + margin; y++) {
+
+            bw::WalkPosition tile(x, y);
+            if (!tile.isValid()) { continue; }
+
+            float smallestDistance = FLT_MAX;
+            bw::WalkPosition closestPoint;
+            std::pair<bw::WalkPosition, bw::WalkPosition> closestSegment;
+
+            for (int i = 0; i < m_path.size(); i++) {
+                bw::WalkPosition first = m_path.at(i);
+                bw::WalkPosition second = m_path.at((i + 1) % m_path.size());
+                std::pair<bw::WalkPosition, bw::WalkPosition> segment = { first, second };
+
+                bw::WalkPosition point = util::closestPointOnSegment(tile, segment);
+
+                float distance = util::distanceBetween<bw::WalkPosition>(tile, point);
+                if (distance < smallestDistance) {
+                    closestPoint = point;
+                    closestSegment = segment;
+                    smallestDistance = distance;
+                }
+            }
+
+            double segmentAngle = util::angleBetween<bw::WalkPosition>(closestSegment.first, closestSegment.second);
+            double pointAngle = util::angleBetween<bw::WalkPosition>(tile, closestPoint);
+            double deltaAngle = util::shortestAngularDistance(segmentAngle, pointAngle);
+
+            float strength = std::min(smallestDistance / 8.0f, 1.0f);
+            double vectorAngle = segmentAngle + strength * deltaAngle;
+
+            m_pathField.set(x, y, Vector2(vectorAngle));
+        }
+    }
+}
 
 // TODO: refactor to extract common functionality between updateGroundField and updateEnemyField
 void VectorField::updateGroundField(bw::Unit unit, int margin) {
@@ -307,20 +377,22 @@ void VectorField::updateGroundField(bw::Unit unit, int margin) {
             }
 
             bw::Position pos(walkTile);
-            centroid = centroid / filledCount + Vector2{ pos };
+            centroid = centroid / static_cast<float>(filledCount) + Vector2{ pos };
 
             double angle = util::angleBetween<bw::Position>(centroid, pos);
-            float distance = util::distanceBetween(centroid, pos);
+            float distance = util::distanceBetween<bw::Position>(centroid, pos);
 
             if (distance > mooreRadius) { continue; }
 
-            Vector2 vec = Vector2{ angle } * (1.3 - (distance / mooreRadius));
+            Vector2 vec = Vector2{ angle } * (1.3f - (distance / mooreRadius));
             m_groundField.set(x, y, vec);
         }
     }
 }
 
 void VectorField::updateEnemyField(bw::WalkPosition position) {
+    bw::Position enemyCenter = bw::Position(position) + bw::Position{ 4, 4 };
+
     const int radius = 8;
     for (int x = position.x - radius; x <= position.x + radius; x++) {
         for (int y = position.y - radius; y <= position.y + radius; y++) {
@@ -329,12 +401,12 @@ void VectorField::updateEnemyField(bw::WalkPosition position) {
             if (!walkTile.isValid()) { continue; }
 
             bw::Position tileCenter = bw::Position(walkTile) + bw::Position{ 4, 4 };
-            float distance = util::distanceBetween(m_mouse, tileCenter);
+            float distance = util::distanceBetween<bw::Position>(enemyCenter, tileCenter);
 
             if (distance > radius * 8.0f) { continue; }
 
-            Vector2 vec(util::angleBetween(m_mouse, tileCenter));
-            vec *= 1.2 - (distance / (radius * 8.0f));
+            Vector2 vec(util::angleBetween(enemyCenter, tileCenter));
+            vec *= 1.2f - (distance / (radius * 8.0f));
 
             m_enemyField.set(x, y, vec);
         }
@@ -351,14 +423,15 @@ void VectorField::updateWalkable(bw::Unit unit, bool value) {
 }
 
 std::optional<Vector2> VectorField::getVectorSum(int x, int y) const {
-    std::optional<Vector2> ground_vector = m_groundField.get(x, y);
-    std::optional<Vector2> enemy_vector = m_enemyField.get(x, y);
+    std::optional<Vector2> pathVector = m_pathField.get(x, y);
+    std::optional<Vector2> groundVector = m_groundField.get(x, y);
+    std::optional<Vector2> enemyVector = m_enemyField.get(x, y);
 
-    if (ground_vector == std::nullopt || enemy_vector == std::nullopt) {
+    if (pathVector == std::nullopt || groundVector == std::nullopt || enemyVector == std::nullopt) {
         return std::nullopt;
     }
 
-    Vector2 vector = *ground_vector + *enemy_vector;
+    Vector2 vector = *pathVector + *groundVector + *enemyVector;
     return vector;
 }
 
@@ -412,7 +485,7 @@ void VectorField::draw() const {
     bw::WalkPosition walkMouse(m_mouse);
     bw::TilePosition tileMouse(m_mouse);
 
-    drawWalkTile(walkMouse, bw::Colors::Purple);
+    //drawWalkTile(walkMouse, bw::Colors::Cyan);
     //drawBuildTile(tileMouse, bw::Colors::Purple);
 
     const char white = '\x04';
@@ -426,11 +499,11 @@ void VectorField::draw() const {
     g_game->drawTextScreen(10, 60, "%cTile Position:  (%d, %d)", '\x04', tileMouse.x, tileMouse.y);
 }
 
-void VectorField::drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const {
+void VectorField::drawTile(bw::Position tile, int scale, bw::Color color) const {
     const int padding = 1;
-    const int px = walkTile.x * 8 + padding;
-    const int py = walkTile.y * 8 + padding;
-    const int d = 8 - 2 * padding;
+    const int px = tile.x * scale + padding;
+    const int py = tile.y * scale + padding;
+    const int d = scale - 2 * padding;
 
     g_game->drawLineMap(px, py, px + d, py, color);
     g_game->drawLineMap(px + d, py, px + d, py + d, color);
@@ -438,16 +511,12 @@ void VectorField::drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const
     g_game->drawLineMap(px, py + d, px, py, color);
 }
 
-void VectorField::drawBuildTile(bw::TilePosition buildTile, bw::Color color) const {
-    const int padding = 1;
-    const int px = buildTile.x * 32 + padding;
-    const int py = buildTile.y * 32 + padding;
-    const int d = 32 - 2 * padding;
+void VectorField::drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const {
+    drawTile({ walkTile.x, walkTile.y }, bw::WALKPOSITION_SCALE, color);
+}
 
-    g_game->drawLineMap(px, py, px + d, py, color);
-    g_game->drawLineMap(px + d, py, px + d, py + d, color);
-    g_game->drawLineMap(px + d, py + d, px, py + d, color);
-    g_game->drawLineMap(px, py + d, px, py, color);
+void VectorField::drawBuildTile(bw::TilePosition buildTile, bw::Color color) const {
+    drawTile({ buildTile.x, buildTile.y }, bw::TILEPOSITION_SCALE, color);
 }
 
 void VectorField::drawWalkVector(bw::WalkPosition walkTile, Vector2 vector, bw::Color color) const {
