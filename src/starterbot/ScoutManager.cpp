@@ -49,20 +49,20 @@ void ScoutManager::onStart() {
         }
     }
 
-    std::cout << "This is where my base is at: " << myBase << "\n";
+    //std::cout << "This is where my base is at: " << myBase << "\n";
 
 
-    std::cout << "And here's the list of the possible places that our scout should move: " << "";
-    for (bw::TilePosition spawnPos : g_game->getStartLocations()) {
-        //if the pos is not my base, add it to the starting locations that the scout should 
-        if (spawnPos.x != myBase.x and spawnPos.y != myBase.y){
-            startingLocations.push_back(spawnPos);
-            std::cout << spawnPos << ""; 
-            g_game->
-        }
-    }
+    //std::cout << "And here's the list of the possible places that our scout should move: " << "";
+    //for (bw::TilePosition spawnPos : g_game->getStartLocations()) {
+    //    //if the pos is not my base, add it to the starting locations that the scout should 
+    //    if (spawnPos.x != myBase.x and spawnPos.y != myBase.y){
+    //        startingLocations.push_back(spawnPos);
+    //        std::cout << spawnPos << ""; 
+    //        //g_game->
+    //    }
+    //}
 
-    std::cout << "\n " << "";
+    //std::cout << "\n " << "";
 }
 
 void ScoutManager::onFrame() {
@@ -74,7 +74,7 @@ void ScoutManager::onFrame() {
     bw::TilePosition secondPos;
     bw::TilePosition middlePos;
 
-    std::cout << "Finish Search Enemy Base? " << finishSearchEnemyBase << "\n"; //once when reached to spawn loc, set to 1, incorrect
+    //std::cout << "Finish Search Enemy Base? " << finishSearchEnemyBase << "\n"; //once when reached to spawn loc, set to 1, incorrect
 
 
 
