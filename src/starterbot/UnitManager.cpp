@@ -32,7 +32,7 @@ bool UnitManager::isAlive(bw::Unit unit) {
 bw::Unit UnitManager::matchUnit(const bw::Unitset& units, const bw::UnitFilter& pred) {
     // Iterate through the set of units and return the first one that matches.
     for (bw::Unit unit : units) {
-        if (!pred.isValid() || pred(unit)) {
+        if((!pred.isValid() || pred(unit)) and (g_game->isVisible(unit->getTilePosition()))){
             return unit;
         }
     }
