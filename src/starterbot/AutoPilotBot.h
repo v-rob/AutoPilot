@@ -10,7 +10,7 @@ class AutoPilotBot : public EventReceiver {
 private:
 	StrategyManager m_strategyManager;
 
-	int m_gameCount;
+	int m_gameCount = 0;
 
 public:
 	// Creates an instance of AutoPilotBot, connects to the BWAPI client, and plays games.
