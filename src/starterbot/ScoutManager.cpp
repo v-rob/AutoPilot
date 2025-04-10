@@ -58,7 +58,7 @@ void ScoutManager::onStart() {
         if (spawnPos.x != myBase.x and spawnPos.y != myBase.y){
             startingLocations.push_back(spawnPos);
             std::cout << spawnPos << ""; 
-            g_game->
+           // g_game->
         }
     }
 
