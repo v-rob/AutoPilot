@@ -1,6 +1,11 @@
 #include "UnitManager.h"
 
 ShadowUnit UnitManager::getShadow(bw::Unit unit) {
+    // The shadow unit for a null unit is, shockingly, a null shadow unit.
+    if (unit == nullptr) {
+        return nullptr;
+    }
+
     // If we already have a shadow unit corresponding to this unit ID, return it.
     auto it = m_shadowMap.find(unit->getID());
     if (it != m_shadowMap.end()) {
@@ -16,6 +21,9 @@ ShadowUnit UnitManager::getShadow(bw::Unit unit) {
 }
 
 bw::Unit UnitManager::getReal(bw::Unit unit) {
+    if (unit == nullptr) {
+        return nullptr;
+    }
     return getShadow(unit)->getRealUnit();
 }
 
