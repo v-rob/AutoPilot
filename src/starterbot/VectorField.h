@@ -32,6 +32,13 @@ public:
 };
 
 namespace util {
+    // Linearly interpolates between two values
+    template <typename T>
+    T lerp(T a, T b, float t);
+
+    // Returns the shortest angular distance between two angles
+    double shortestAngularDistance(double a, double b);
+
     // Keeps angle between 0 and 2 * PI
     double boundAngle(double angle);
 
@@ -40,14 +47,16 @@ namespace util {
     double angleBetween(const T& point1, const T& point2);
 
     // Returns the distance between two points
-    float distanceBetween(const Vector2& point1, const Vector2& point2);
+    template <typename T>
+    float distanceBetween(const T& point1, const T& point2);
 
     // Returns the convex hull of a set of points
     // The returned hull starts with the left-most point and the following ones are in clockwise order
     std::vector<bw::Position> convexHull(std::vector<bw::Position> points);
 
     // Given a point p and a line segment l, returns the point p' on l that is closest to p
-    bw::Position closestPointOnSegment(bw::Position point, std::pair<bw::Position, bw::Position> segment);
+    template <typename T>
+    T closestPointOnSegment(T point, std::pair<T, T> lineSegment);
 }
 
 class VectorField : public EventReceiver {
@@ -88,7 +97,7 @@ private:
     int m_width = 0;
     int m_height = 0;
 
-    bool m_drawField = false;
+    bool m_drawField = true;
 
     // The chosen unit type for scouting (will eventually be dyanmic based on race / strategy)
     const bw::UnitType m_scoutType = bw::UnitTypes::Protoss_Scout;
@@ -122,6 +131,7 @@ protected:
 
 
     void draw() const;
+    void drawTile(bw::Position tile, int scale, bw::Color color) const;
     void drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const;
     void drawBuildTile(bw::TilePosition buildTile, bw::Color color) const;
     void drawWalkVector(bw::WalkPosition walkTile, Vector2 vector, bw::Color color) const;
