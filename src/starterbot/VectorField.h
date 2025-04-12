@@ -112,6 +112,7 @@ public:
 protected:
     virtual void onStart() override;
     virtual void onFrame() override;
+    virtual void onDraw() override;
     virtual void onSendText(const std::string& text) override;
 
     // Updates m_path based on the positions of enemy buildings
@@ -130,7 +131,6 @@ protected:
     void updateWalkable(bw::Unit unit, bool value);
 
 
-    void draw() const;
     void drawTile(bw::Position tile, int scale, bw::Color color) const;
     void drawWalkTile(bw::WalkPosition walkTile, bw::Color color) const;
     void drawBuildTile(bw::TilePosition buildTile, bw::Color color) const;

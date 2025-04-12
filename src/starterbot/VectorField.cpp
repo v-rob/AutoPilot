@@ -245,10 +245,64 @@ void VectorField::onFrame() {
 
     m_mouse = g_game->getMousePosition() + g_game->getScreenPosition();
     updateEnemyField(bw::WalkPosition(m_mouse));
+}
 
-    if (m_drawField) {
-        draw();
+void VectorField::onDraw() {
+    if (!m_drawField) {
+        return;
     }
+
+    const bw::WalkPosition screen(g_game->getScreenPosition());
+    const int sx = screen.x;
+    const int sy = screen.y;
+    const int ex = sx + 20 * 4; // Screen width in walk tiles
+    const int ey = sy + 15 * 4; // screen height in walk tiles
+
+    for (int x = sx; x < ex; ++x) {
+        for (int y = sy; y < ey; y++) {
+
+            bw::WalkPosition walkTile(x, y);
+
+            if (!walkTile.isValid()) { continue; }
+
+            //bw::Color tileColor = m_walkable.get(x, y) ? bw::Colors::Green : bw::Colors::Red;
+
+            if (m_walkable.get(x, y)) {
+                std::optional<Vector2> vector = getVectorSum(x, y);
+
+                if (vector == std::nullopt) {
+                    continue;
+                }
+
+                drawWalkVector(walkTile, *vector, bw::Colors::Green);
+            } else {
+                drawWalkTile(walkTile, bw::Colors::Red);
+            }
+        }
+    }
+
+    for (auto& building : m_enemyBuildings) {
+        g_game->drawCircleMap(building->getPosition(), m_scoutType.sightRange() / 2, bw::Colors::Cyan);
+    }
+
+    drawPolyLine(m_path, bw::Colors::Cyan);
+
+    bw::Position pixelMouse = m_mouse;
+    bw::WalkPosition walkMouse(m_mouse);
+    bw::TilePosition tileMouse(m_mouse);
+
+    //drawWalkTile(walkMouse, bw::Colors::Cyan);
+    //drawBuildTile(tileMouse, bw::Colors::Purple);
+
+    const char white = '\x04';
+
+    g_game->drawBoxScreen(0, 0, 180, 80, bw::Colors::Black, true);
+    g_game->setTextSize(BWAPI::Text::Size::Huge);
+    g_game->drawTextScreen(10, 5, "%cMouse Position", '\x04');
+    g_game->setTextSize(BWAPI::Text::Size::Default);
+    g_game->drawTextScreen(10, 30, "%cPixel Position: (%d, %d)", '\x04', pixelMouse.x, pixelMouse.y);
+    g_game->drawTextScreen(10, 45, "%cWalk Position: (%d, %d)", '\x04', walkMouse.x, walkMouse.y);
+    g_game->drawTextScreen(10, 60, "%cTile Position:  (%d, %d)", '\x04', tileMouse.x, tileMouse.y);
 }
 
 void VectorField::generatePath() {
@@ -444,60 +498,6 @@ void VectorField::onSendText(const std::string& text) {
         m_drawField = !m_drawField;
     }
 };
-
-void VectorField::draw() const {
-    const bw::WalkPosition screen(g_game->getScreenPosition());
-    const int sx = screen.x;
-    const int sy = screen.y;
-    const int ex = sx + 20 * 4; // Screen width in walk tiles
-    const int ey = sy + 15 * 4; // screen height in walk tiles
-
-    for (int x = sx; x < ex; ++x) {
-        for (int y = sy; y < ey; y++) {
-
-            bw::WalkPosition walkTile(x, y);
-
-            if (!walkTile.isValid()) { continue; }
-
-            //bw::Color tileColor = m_walkable.get(x, y) ? bw::Colors::Green : bw::Colors::Red;
-
-            if (m_walkable.get(x, y)) {
-                std::optional<Vector2> vector = getVectorSum(x, y);
-
-                if (vector == std::nullopt) {
-                    continue;
-                }
-
-                drawWalkVector(walkTile, *vector, bw::Colors::Green);
-            } else {
-                drawWalkTile(walkTile, bw::Colors::Red);
-            }
-        }
-    }
-
-    for (auto& building : m_enemyBuildings) {
-        g_game->drawCircleMap(building->getPosition(), m_scoutType.sightRange() / 2, bw::Colors::Cyan);
-    }
-
-    drawPolyLine(m_path, bw::Colors::Cyan);
-
-    bw::Position pixelMouse = m_mouse;
-    bw::WalkPosition walkMouse(m_mouse);
-    bw::TilePosition tileMouse(m_mouse);
-
-    //drawWalkTile(walkMouse, bw::Colors::Cyan);
-    //drawBuildTile(tileMouse, bw::Colors::Purple);
-
-    const char white = '\x04';
-
-    g_game->drawBoxScreen(0, 0, 180, 80, bw::Colors::Black, true);
-    g_game->setTextSize(BWAPI::Text::Size::Huge);
-    g_game->drawTextScreen(10, 5, "%cMouse Position", '\x04');
-    g_game->setTextSize(BWAPI::Text::Size::Default);
-    g_game->drawTextScreen(10, 30, "%cPixel Position: (%d, %d)", '\x04', pixelMouse.x, pixelMouse.y);
-    g_game->drawTextScreen(10, 45, "%cWalk Position: (%d, %d)", '\x04', walkMouse.x, walkMouse.y);
-    g_game->drawTextScreen(10, 60, "%cTile Position:  (%d, %d)", '\x04', tileMouse.x, tileMouse.y);
-}
 
 void VectorField::drawTile(bw::Position tile, int scale, bw::Color color) const {
     const int padding = 1;

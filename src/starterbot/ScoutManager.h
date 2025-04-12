@@ -2,6 +2,7 @@
 
 #include "Tools.h"
 #include "UnitManager.h"
+#include "BaseManager.h"
 #include "VectorField.h"
 
 // This class is in charge of reserving scouts and sending them to find the enemy base and
@@ -10,6 +11,7 @@
 class ScoutManager : public EventReceiver {
 private:
     UnitManager& m_unitManager;
+    BaseManager m_baseManager;
     VectorField m_vectorField;
 
     // The set of units that are reserved as scouts.

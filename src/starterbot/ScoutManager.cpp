@@ -2,7 +2,7 @@
 #include <cmath>
 
 ScoutManager::ScoutManager(UnitManager& unitManager) :
-    m_unitManager(unitManager), m_vectorField(unitManager), finishSearchEnemyBase(false),
+    m_unitManager(unitManager), m_vectorField(unitManager), m_baseManager(unitManager), finishSearchEnemyBase(false),
     maneuverPathAdded(false), reachedPointOne(true), reachedPointTwo(false), reachedPointMiddle(false), goingRight(true){
 }
 
@@ -24,6 +24,7 @@ int ScoutManager::countScouts(bw::UnitType type) {
 
 void ScoutManager::notifyMembers(const bw::Event& event) {
     m_vectorField.notifyReceiver(event);
+    m_baseManager.notifyReceiver(event);
 }
 
 void ScoutManager::onStart() {
