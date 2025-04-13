@@ -22,11 +22,12 @@ Base& BaseManager::getClosestBase(bw::Unit& unit) {
     return *closestBase;
 }
 
+// Perform basic map analysis by finding all resources on the map, clustering them, and 
+// creating Bases at them.
 void BaseManager::onStart() {
 
     std::vector<bw::Unitset> resourceClusters;
 
-    // Cluster all resources on the map.
     for (bw::Unit unit : g_game->getStaticNeutralUnits()) {
 
         // Ignore non-resources (special buildings that exist at game-start).
@@ -38,6 +39,8 @@ void BaseManager::onStart() {
         bool placed = false;
 
         for (bw::Unitset& cluster : resourceClusters) {
+
+            // If this resource is close enough to an existing cluster, add it.
             if (resourcePosition.getApproxDistance(bw::TilePosition(cluster.getPosition())) < RESOURCE_RADIUS) {
                 cluster.insert(unit);
                 placed = true;
@@ -45,6 +48,7 @@ void BaseManager::onStart() {
             }
         }
 
+        // Otherwise, create a new cluster.
         if (!placed) {
             bw::Unitset newCluster;
             newCluster.insert(unit);
@@ -52,11 +56,13 @@ void BaseManager::onStart() {
         }
     }
 
+    // For every resource cluster found, create a new Base.
     for (auto& cluster : resourceClusters) {
         bw::Position centroid = cluster.getPosition();
         std::vector<bw::Unit> minerals;
         std::vector<bw::Unit> geysers;
 
+        // Add each resource to the appropriate list
         for (auto& resource : cluster) {
             if (resource->getType().isMineralField()) {
                 minerals.push_back(resource);
@@ -66,10 +72,13 @@ void BaseManager::onStart() {
             }
         }
 
+        // The set of buildings and enemyCount initalize as empty and as zero, respectively
         m_bases.push_back({ centroid, minerals, geysers, {}, 0 });
     }
 }
 
+// Each frame, check for buildings that have been created or destroyed. Update the Base that they're
+// closest to accordingly.
 void BaseManager::onFrame() {
 
     bw::Unitset shadowBuildings = m_unitManager.shadowUnits(
@@ -125,12 +134,13 @@ void BaseManager::onDraw() {
         return;
     }
 
+    // Draw lines from each resource / building to each base's centroid
     for (auto& base : m_bases) {
         std::vector<bw::Unit> resources = base.minerals;
         resources.insert(resources.end(), base.geysers.begin(), base.geysers.end());
 
         for (auto& resource : resources) {
-            g_game->drawLineMap(bw::Position(base.centroid), resource->getPosition(), bw::Colors::Green);
+            g_game->drawLineMap(bw::Position(base.centroid), resource->getPosition(), bw::Colors::Orange);
         }
 
         for (auto& building : base.buildings) {
