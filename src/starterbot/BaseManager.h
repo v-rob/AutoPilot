@@ -4,7 +4,7 @@
 #include "UnitManager.h"
 #include <unordered_map>
 
-// A Base struct is created for every resource cluster on the map. Each base holds references
+// A base struct is created for every resource cluster on the map. Each base holds references
 // to the resources and buildings placed within it, and information on whether the enemy is
 // currently occupying it.
 struct Base {
@@ -13,11 +13,10 @@ struct Base {
 	bw::Position centroid;
 
 	// The minerals and geysers that belong to this base.
-	std::vector<bw::Unit> minerals;
-	std::vector<bw::Unit> geysers;
+	bw::Unitset resources;
 
 	// All of the buildings closest to this base.
-	std::vector<bw::Unit> buildings;
+	bw::Unitset buildings;
 	
 	int enemyCount = 0;
 
@@ -37,10 +36,10 @@ class BaseManager : public EventReceiver {
 private:
 	UnitManager& m_unitManager;
 
-	// The assumed maximum distance between resources in the same cluster, in TilePosition units.
-	const int RESOURCE_RADIUS = 15;
+	// The assumed maximum distance between resources in the same cluster, 8 tiles, in pixel units.
+	const int RESOURCE_RADIUS = 8 * bw::TILEPOSITION_SCALE;
 
-	// All Bases on the map.
+	// All bases on the map.
 	std::vector<Base> m_bases;
 
 	// The set of all alive buildings on the map (ours and the enemies).
@@ -51,9 +50,8 @@ private:
 public:
 	BaseManager(UnitManager& unitManager);
 
-	// Returns the closest base to a given unit based on BroodWar's built in pathfinding, i.e. with 
-	// respect to the terrain and not just straight-distance measurement.
-	Base& getClosestBase(bw::Unit& unit);
+	// Returns the closest base to a given unit.
+	Base& getClosestBase(bw::Unit unit);
 
 protected:
 	virtual void onStart() override;

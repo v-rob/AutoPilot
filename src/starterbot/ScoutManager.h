@@ -10,13 +10,13 @@
 class ScoutManager : public EventReceiver {
 private:
     UnitManager& m_unitManager;
-    BaseManager m_baseManager;
+    BaseManager& m_baseManager;
 
     // The set of units that are reserved as scouts.
     bw::Unitset m_scouts;
 
 public:
-    ScoutManager(UnitManager& unitManager);
+    ScoutManager(UnitManager& unitManager, BaseManager& baseManager);
 
     // Requests that a new scout be reserved. If there are no units of the appropriate
     // type left, then this returns false and no scout is reserved.
@@ -26,8 +26,6 @@ public:
     int countScouts(bw::UnitType type);
 
 protected:
-    virtual void notifyMembers(const bw::Event& event) override;
-
     virtual void onStart() override;
     virtual void onFrame() override;
     virtual void onUnitDestroy(bw::Unit unit) override;

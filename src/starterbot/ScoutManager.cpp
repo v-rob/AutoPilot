@@ -1,7 +1,7 @@
 #include "ScoutManager.h"
 
-ScoutManager::ScoutManager(UnitManager& unitManager) :
-    m_unitManager(unitManager), m_baseManager(unitManager) {
+ScoutManager::ScoutManager(UnitManager& unitManager, BaseManager& baseManager) :
+    m_unitManager(unitManager), m_baseManager(baseManager) {
 }
 
 bool ScoutManager::addScout(bw::UnitType type) {
@@ -18,10 +18,6 @@ bool ScoutManager::addScout(bw::UnitType type) {
 
 int ScoutManager::countScouts(bw::UnitType type) {
     return UnitManager::matchCount(m_scouts, bw::Filter::GetType == type);
-}
-
-void ScoutManager::notifyMembers(const bw::Event& event) {
-    m_baseManager.notifyReceiver(event);
 }
 
 void ScoutManager::onStart() {

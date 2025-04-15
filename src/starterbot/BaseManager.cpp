@@ -1,15 +1,14 @@
 #include "BaseManager.h"
+#include "UnitTools.h"
 
 BaseManager::BaseManager(UnitManager& unitManager) :
     m_unitManager(unitManager) {
 }
 
-Base& BaseManager::getClosestBase(bw::Unit& unit) {
+Base& BaseManager::getClosestBase(bw::Unit unit) {
     Base* closestBase;
     int shortestDistance = INT_MAX;
 
-    // getDistance uses Brood War's built-in pathfinding, so this will find the
-    // base that's closest while accounting for terrain.
     for (Base& base : m_bases) {
         int distance = unit->getDistance(base.centroid);
 
@@ -23,110 +22,59 @@ Base& BaseManager::getClosestBase(bw::Unit& unit) {
 }
 
 // Perform basic map analysis by finding all resources on the map, clustering them, and 
-// creating Bases at them.
+// creating bases at them.
 void BaseManager::onStart() {
 
-    std::vector<bw::Unitset> resourceClusters;
+    m_buildings.clear();
+    m_bases.clear();
 
-    for (bw::Unit unit : g_game->getStaticNeutralUnits()) {
+    // Get all resources, i.e. all minerals and geysers.
+    bw::Unitset resources = g_game->getMinerals();
+    bw::Unitset geysers = g_game->getGeysers();
+    resources.insert(geysers.begin(), geysers.end());
 
-        // Ignore non-resources (special buildings that exist at game-start).
-        if (!(unit->getType().isMineralField() || unit->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser)) {
-            continue;
-        }
+    std::vector<Cluster> resourceClusters = findRadialClusters(resources, RESOURCE_RADIUS);
 
-        bw::TilePosition resourcePosition = unit->getTilePosition();
-        bool placed = false;
-
-        for (bw::Unitset& cluster : resourceClusters) {
-
-            // If this resource is close enough to an existing cluster, add it.
-            if (resourcePosition.getApproxDistance(bw::TilePosition(cluster.getPosition())) < RESOURCE_RADIUS) {
-                cluster.insert(unit);
-                placed = true;
-                break;
-            }
-        }
-
-        // Otherwise, create a new cluster.
-        if (!placed) {
-            bw::Unitset newCluster;
-            newCluster.insert(unit);
-            resourceClusters.push_back(newCluster);
-        }
-    }
-
-    // For every resource cluster found, create a new Base.
+    // For every resource cluster found, create a new base.
     for (auto& cluster : resourceClusters) {
-        bw::Position centroid = cluster.getPosition();
-        std::vector<bw::Unit> minerals;
-        std::vector<bw::Unit> geysers;
-
-        // Add each resource to the appropriate list
-        for (auto& resource : cluster) {
-            if (resource->getType().isMineralField()) {
-                minerals.push_back(resource);
-            }
-            if (resource->getType() == BWAPI::UnitTypes::Resource_Vespene_Geyser) {
-                geysers.push_back(resource);
-            }
-        }
-
-        // The set of buildings and enemyCount initalize as empty and as zero, respectively
-        m_bases.push_back({ centroid, minerals, geysers, {}, 0 });
+        // The set of buildings and enemyCount initalize as empty and as zero, respectively.
+        m_bases.push_back({ cluster.centroid, cluster.units, {}, 0 });
     }
 }
 
-// Each frame, check for buildings that have been created or destroyed. Update the Base that they're
-// closest to accordingly.
+// Each frame, check if there is a difference in buildings, i.e. any have been created or
+// destroyed. If there is, update the bases.
 void BaseManager::onFrame() {
 
     bw::Unitset shadowBuildings = m_unitManager.shadowUnits(
-        bw::Filter::IsBuilding &&                                   // get enemy buildings
-        !bw::Filter::IsSpecialBuilding && !bw::Filter::IsNeutral    // ignore resources and pre-exisiting buildings
+        bw::Filter::IsBuilding &&                                   // get all buildings
+        !bw::Filter::IsSpecialBuilding && !bw::Filter::IsNeutral    // ignore pre-exisiting buildings and resources
     );
+    
+    // There have been no buildings created or destroyed.
+    if (shadowBuildings == m_buildings) {
+        return;
+    }
 
-    // Check for new buildings.
+    // Otherwise, recompute the bases.
+    for (Base base : m_bases) {
+        base.enemyCount = 0;
+        base.buildings.clear();
+    }
+
     for (bw::Unit building : shadowBuildings) {
-        if (m_buildings.find(building) == m_buildings.end()) {
-            m_buildings.insert(building);
+        // Find the base this building belongs to and add it
+        Base& closestBase = getClosestBase(building);
+        closestBase.buildings.insert(building);
 
-            // If there's a new building, find the base it now belongs to.
-            Base& closestBase = getClosestBase(building);
-
-            // Add the building to this base
-            closestBase.buildings.push_back(building);
-
-            // If the building belongs to the enemy, we increment the base's enemy count
-            if (building->getPlayer() == g_game->enemy()) {
-                closestBase.enemyCount += 1;
-            }
+        // If the building belongs to the enemy, we increment the base's enemy count
+        if (building->getPlayer() == g_game->enemy()) {
+            closestBase.enemyCount += 1;
         }
     }
 
-    // Check for destroyed buildings.
-    for (bw::Unit building : m_buildings) {
-        if (shadowBuildings.find(building) == shadowBuildings.end()) {
-            m_buildings.erase(building);
-
-            // If a building has been destoryed, find the base it had belonged to.
-            for (Base& base : m_bases) {
-                auto it = std::find(base.buildings.begin(), base.buildings.end(), building);
-
-                // Remove the building from this base
-                if (it != base.buildings.end()) {
-                    base.buildings.erase(it);
-
-                    // If the building belonged to the enemy, we decrement the base's enemy count
-                    if (building->getPlayer() == g_game->enemy()) {
-                        base.enemyCount += 1;
-                    }
-
-                    break;
-                }
-            }
-        }
-    }
+    // Update the set of building units so we can check again next frame
+    m_buildings = shadowBuildings;
 }
 
 void BaseManager::onDraw() {
@@ -136,10 +84,7 @@ void BaseManager::onDraw() {
 
     // Draw lines from each resource / building to each base's centroid
     for (auto& base : m_bases) {
-        std::vector<bw::Unit> resources = base.minerals;
-        resources.insert(resources.end(), base.geysers.begin(), base.geysers.end());
-
-        for (auto& resource : resources) {
+        for (auto& resource : base.resources) {
             g_game->drawLineMap(bw::Position(base.centroid), resource->getPosition(), bw::Colors::Orange);
         }
 

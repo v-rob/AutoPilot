@@ -1,14 +1,16 @@
 #include "StrategyManager.h"
 
 StrategyManager::StrategyManager() :
+    m_baseManager(m_unitManager),
     m_productionManager(m_unitManager),
-    m_scoutManager(m_unitManager),
+    m_scoutManager(m_unitManager, m_baseManager),
     m_combatManager(m_unitManager) {
 }
 
 void StrategyManager::notifyMembers(const bw::Event& event) {
     m_unitManager.notifyReceiver(event);
 
+    m_baseManager.notifyReceiver(event);
     m_productionManager.notifyReceiver(event);
     m_scoutManager.notifyReceiver(event);
     m_combatManager.notifyReceiver(event);
