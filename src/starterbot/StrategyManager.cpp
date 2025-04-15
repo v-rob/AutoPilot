@@ -37,8 +37,8 @@ void StrategyManager::onProtossFrame() {
     // First, we make sure none of our buildings are idle by training new units.
     m_productionManager.idleTrainRequests(bw::UnitTypes::Protoss_Probe, false);
     m_productionManager.groupTrainRequests({
-        {bw::UnitTypes::Protoss_Zealot,  0.60},
-        {bw::UnitTypes::Protoss_Dragoon, 0.40},
+        {bw::UnitTypes::Protoss_Zealot,  0.55},
+        {bw::UnitTypes::Protoss_Dragoon, 0.45},
     }, false);
 
     // Make sure we have enough pylons to support the number of units we have. Since
@@ -61,18 +61,30 @@ void StrategyManager::onProtossFrame() {
     // choose the number of gateways to build based on the number of fighting units we
     // currently have so we don't run into bottlenecks in army production.
     if (workerCount >= 11) {
-        m_productionManager.targetBuildRequests(
-            bw::UnitTypes::Protoss_Gateway, (zealotCount + dragoonCount) / 5 + 1);
+        int target = 1;
+
+        if (zealotCount + dragoonCount >= 12) {
+            target = 3;
+        } else if (zealotCount + dragoonCount >= 4) {
+            target = 2;
+        }
+
+        m_productionManager.targetBuildRequests(bw::UnitTypes::Protoss_Gateway, target);
     }
 
     // Once we've built a few zealots, we should start expanding to get more powerful
     // units. So, build an assimilator to start collecting gas, and then a cybernetics
     // core for dragoon support.
-    if (zealotCount > 2) {
+    if (zealotCount >= 3) {
         m_productionManager.targetBuildRequests(bw::UnitTypes::Protoss_Assimilator, 1);
     }
-    if (zealotCount > 3) {
+    if (zealotCount >= 4) {
         m_productionManager.targetBuildRequests(bw::UnitTypes::Protoss_Cybernetics_Core, 1);
+    }
+
+    // If we have a large enough army at any point, we can send them out to attack.
+    if (dragoonCount + zealotCount >= 20) {
+        m_combatManager.startAttack();
     }
 }
 

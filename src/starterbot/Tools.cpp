@@ -4,6 +4,11 @@ bw::GameWrapper& g_game = bw::Broodwar;
 bw::Player g_self = nullptr;
 
 namespace BWAPI::Filter {
+    static bool implIsTargetable(Unit u) {
+        return u->isTargetable();
+    }
+    const UnaryFilter<Unit, bool (*)(Unit)> IsTargetable(&implIsTargetable);
+
     static Unit implBuildUnit(Unit u) {
         return u->getBuildUnit();
     }

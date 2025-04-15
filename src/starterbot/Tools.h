@@ -17,6 +17,7 @@ extern bw::Player g_self;
 // BWAPI does not have a filter for the UnitInterface::getBuildUnit() method. This method
 // is useful for the bot, so we implement our own polyfill for it.
 namespace BWAPI::Filter {
+    extern const UnaryFilter<Unit, bool (*)(Unit)> IsTargetable;
     extern const CompareFilter<Unit, Unit, Unit(*)(Unit)> BuildUnit;
 }
 
