@@ -232,3 +232,51 @@ std::vector<Cluster> findUnitClusters(const bw::Unitset& units, int desiredSize,
 
     return clusters;
 }
+
+std::vector<Cluster> findRadialClusters(const bw::Unitset& units, int radius) {
+    std::vector<Cluster> clusters;
+
+    for (bw::Unit unit : units) {
+        // For each unit, we need to add it to either an existing cluster or create a new
+        // cluster to put it in.
+        bool foundCluster = false;
+
+        for (Cluster& cluster : clusters) {
+            // We can only add this unit to the cluster if the distance between it and
+            // every other unit in the cluster is within the given radius.
+            bool inRadius = true;
+
+            for (bw::Unit other : cluster.units) {
+                // Since the radius is specified from the centroid of the circle, we need
+                // to multiply it by two to get the diameter for our distance comparisons.
+                if (!isInRadius(unit->getPosition(), other->getPosition(), radius * 2)) {
+                    inRadius = false;
+                    break;
+                }
+            }
+
+            // If we're within the radius for this cluster, we can add the unit to it.
+            if (inRadius) {
+                cluster.units.insert(unit);
+                foundCluster = true;
+                break;
+            }
+        }
+
+        // Otherwise, our unit couldn't be placed into any existing cluster, so make a new
+        // cluster for just this unit.
+        if (!foundCluster) {
+            Cluster cluster;
+            cluster.units.insert(unit);
+            clusters.push_back(std::move(cluster));
+        }
+    }
+
+    // We didn't need to compute centroid for the purposes of this clustering algorithm,
+    // so compute them all manually now that all the units have been added.
+    for (Cluster& cluster : clusters) {
+        cluster.centroid = cluster.units.getPosition();
+    }
+
+    return clusters;
+}

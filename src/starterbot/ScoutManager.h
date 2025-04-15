@@ -2,6 +2,7 @@
 
 #include "Tools.h"
 #include "UnitManager.h"
+#include "BaseManager.h"
 
 // This class is in charge of reserving scouts and sending them to find the enemy base and
 // keep tabs on enemy operations by patrolling the area. This manager is simply in charge
@@ -9,12 +10,13 @@
 class ScoutManager : public EventReceiver {
 private:
     UnitManager& m_unitManager;
+    BaseManager& m_baseManager;
 
     // The set of units that are reserved as scouts.
     bw::Unitset m_scouts;
 
 public:
-    ScoutManager(UnitManager& unitManager);
+    ScoutManager(UnitManager& unitManager, BaseManager& baseManager);
 
     // Requests that a new scout be reserved. If there are no units of the appropriate
     // type left, then this returns false and no scout is reserved.

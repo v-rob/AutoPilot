@@ -36,3 +36,10 @@ struct Cluster {
 // specifying an optional maximum size for unit clusters.
 std::vector<Cluster> findUnitClusters(
     const bw::Unitset& units, int desiredSize, int maxSize = INT_MAX);
+
+// Takes a set of units and groups them into clusters of units that all are within a
+// certain radius of each other. This is a simpler clustering algorithm, but works better
+// for units that are sparsely and predictably distributed around the map in dense
+// clusters such as mineral fields, as opposed to dense and randomly distributed units
+// like buildings and units within a players base.
+std::vector<Cluster> findRadialClusters(const bw::Unitset& units, int radius);

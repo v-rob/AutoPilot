@@ -1,7 +1,7 @@
 #include "ScoutManager.h"
 
-ScoutManager::ScoutManager(UnitManager& unitManager) :
-    m_unitManager(unitManager) {
+ScoutManager::ScoutManager(UnitManager& unitManager, BaseManager& baseManager) :
+    m_unitManager(unitManager), m_baseManager(baseManager) {
 }
 
 bool ScoutManager::addScout(bw::UnitType type) {

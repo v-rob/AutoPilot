@@ -20,24 +20,26 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\starterbot\AutoPilotBot.h" />
+    <ClInclude Include="..\src\starterbot\BaseManager.h" />
     <ClInclude Include="..\src\starterbot\CombatManager.h" />
-    <ClInclude Include="..\src\starterbot\UnitTools.h" />
     <ClInclude Include="..\src\starterbot\ProductionManager.h" />
     <ClInclude Include="..\src\starterbot\ScoutManager.h" />
     <ClInclude Include="..\src\starterbot\ShadowUnit.h" />
     <ClInclude Include="..\src\starterbot\StrategyManager.h" />
     <ClInclude Include="..\src\starterbot\Tools.h" />
     <ClInclude Include="..\src\starterbot\UnitManager.h" />
+    <ClInclude Include="..\src\starterbot\UnitTools.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\starterbot\BaseManager.cpp" />
     <ClCompile Include="..\src\starterbot\CombatManager.cpp" />
-    <ClCompile Include="..\src\starterbot\UnitTools.cpp" />
     <ClCompile Include="..\src\starterbot\AutoPilotBot.cpp" />
     <ClCompile Include="..\src\starterbot\ProductionManager.cpp" />
     <ClCompile Include="..\src\starterbot\ScoutManager.cpp" />
     <ClCompile Include="..\src\starterbot\StrategyManager.cpp" />
     <ClCompile Include="..\src\starterbot\Tools.cpp" />
     <ClCompile Include="..\src\starterbot\UnitManager.cpp" />
+    <ClCompile Include="..\src\starterbot\UnitTools.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>StarterBot</ProjectName>

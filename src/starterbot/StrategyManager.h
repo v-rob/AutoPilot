@@ -5,6 +5,7 @@
 #include "ScoutManager.h"
 #include "Tools.h"
 #include "UnitManager.h"
+#include "BaseManager.h"
 
 // This is the class in charge of the overall strategy. It tells the subordinate classes
 // that control different aspects of the bot what to do and when according to its internal
@@ -13,6 +14,7 @@ class StrategyManager : public EventReceiver {
 private:
     UnitManager m_unitManager;
 
+    BaseManager m_baseManager;
     ProductionManager m_productionManager;
     ScoutManager m_scoutManager;
     CombatManager m_combatManager;
